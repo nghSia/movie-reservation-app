@@ -1,5 +1,10 @@
-export const environment = {
+export const _environment = {
   production: false,
-  apiUrl: 'http://localhost:3000/api',
-  appName: 'TodoList App'
+  appName: 'TodoList App',
+  tmdb: {
+    baseUrl: 'https://api.themoviedb.org/3',
+    // Configuration token local en attendant
+    token: 'monToken',
+    language: 'fr-FR',
+  },
 };
