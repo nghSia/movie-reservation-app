@@ -2,14 +2,19 @@ import { Component, inject, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { _environment } from '../environment/environment';
+import { Header } from './shared/components/header/header';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
-  templateUrl: './app.html',
+  imports: [RouterOutlet, Header],
   styleUrl: './app.scss',
   standalone: true,
-  template: '<h1>TMDb test</h1>',
+  template: `
+    <app-header></app-header>
+    <main class="container mx-auto p-4">
+      <router-outlet></router-outlet>
+    </main>
+  `,
 })
 export class App {
   protected readonly title = signal('movie-reservation-app');
