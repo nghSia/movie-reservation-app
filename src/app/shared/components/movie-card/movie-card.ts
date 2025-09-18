@@ -22,7 +22,7 @@ import { TmdbService } from '../../../features/home/services/movie.service';
           <p class="line-clamp-2 text-xs text-white/90">{{ i_movie.title }}</p>
         </div>
       </div>
-      <p class="mt-2 text-xs text-neutral-500">{{ i_movie.release_date | date: 'yyyy' }}</p>
+      <p class="mt-2 text-xs text-neutral-500 font-bold text-center">{{ i_movie.title }}</p>
     </article>
   `,
 })
