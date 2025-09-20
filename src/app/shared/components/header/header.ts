@@ -1,15 +1,18 @@
+import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../features/auth/services/auth-service';
-import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-header',
-  imports: [],
+  imports: [CommonModule, RouterLink],
   standalone: true,
   template: `
     <header class="bg-pink-600 text-white p-4">
       <div class="container mx-auto flex justify-between items-center">
-        <h1 class="text-2xl font-bold ">Header Test</h1>
+        <h1 class="text-2xl font-bold ">
+          <a routerLink="/" class="hover:text-blue-200">MovApp</a>
+        </h1>
         <nav>
           <ul class="flex space-x-4">
             @if (this.m_currentUser()) {

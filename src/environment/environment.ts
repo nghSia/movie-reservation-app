@@ -5,6 +5,6 @@ export const _environment = {
     baseUrl: 'https://api.themoviedb.org/3',
     // Configuration token local en attendant
     token: 'monToken',
-    language: 'fr-FR',
+    language: 'eng-ENG',
   },
 };
