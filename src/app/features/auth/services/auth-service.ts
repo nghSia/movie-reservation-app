@@ -1,6 +1,6 @@
 import { computed, Injectable, signal } from '@angular/core';
-import { LoginRequest, RegisterRequest, User } from '../models/user.model';
 import { delay, Observable, of, throwError } from 'rxjs';
+import { LoginRequest, RegisterRequest, User } from '../models/user.model';
 
 @Injectable({
   providedIn: 'root',
@@ -25,8 +25,8 @@ export class AuthService {
   ];
 
   private v_passWords: Record<string, string> = {
-    'admin@example.com': 'admin',
-    'user@example.com': 'user',
+    'admin@example.com': 'admin123',
+    'user@example.com': 'user123',
   };
 
   constructor() {
@@ -82,8 +82,8 @@ export class AuthService {
     return of(this.v_userMocks).pipe(delay(300));
   }
 
-  deleteUser(userId: number): Observable<void> {
-    const v_index = this.v_userMocks.findIndex((u) => u.id === userId);
+  deleteUser(p_userId: number): Observable<void> {
+    const v_index = this.v_userMocks.findIndex((u) => u.id === p_userId);
     if (v_index !== -1) {
       const v_deletedUser = this.v_userMocks[v_index];
       this.v_userMocks.splice(v_index, 1);
@@ -101,9 +101,9 @@ export class AuthService {
     return v_user ? `mock-token-${v_user.id}` : null;
   }
 
-  setCurrentUser(user: User): void {
-    this.v_currentUser.set(user);
-    localStorage.setItem('currentUser', JSON.stringify(user));
+  setCurrentUser(p_user: User): void {
+    this.v_currentUser.set(p_user);
+    localStorage.setItem('currentUser', JSON.stringify(p_user));
   }
 
   private saveUsersToStorage(): void {
@@ -112,12 +112,12 @@ export class AuthService {
   }
 
   private loadUsersFromStorage(): void {
-    const savedUsers = localStorage.getItem('users');
-    const savedPasswords = localStorage.getItem('usersPassword');
+    const v_savedUsers = localStorage.getItem('users');
+    const v_savedPasswords = localStorage.getItem('usersPassword');
 
-    if (savedUsers && savedPasswords) {
-      this.v_userMocks = JSON.parse(savedUsers);
-      this.v_passWords = JSON.parse(savedPasswords);
+    if (v_savedUsers && v_savedPasswords) {
+      this.v_userMocks = JSON.parse(v_savedUsers);
+      this.v_passWords = JSON.parse(v_savedPasswords);
     }
   }
 
