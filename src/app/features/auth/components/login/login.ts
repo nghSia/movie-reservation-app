@@ -92,6 +92,7 @@ export class Login {
   m_loading = signal(false);
   m_error = signal<string>('');
 
+  /** Constructor */
   constructor() {
     this.m_loginForm = this.m_formbuilder.group({
       email: ['', [Validators.required, Validators.email]],
@@ -99,6 +100,7 @@ export class Login {
     });
   }
 
+  /** Handle form submission for login */
   onSubmit() {
     if (this.m_loginForm.valid) {
       this.m_loading.set(true);
@@ -118,11 +120,13 @@ export class Login {
     }
   }
 
+  /** Check if a form field is invalid and touched */
   isFieldInvalid(fieldName: string): boolean {
     const v_field = this.m_loginForm.get(fieldName);
     return !!(v_field && v_field.invalid && (v_field.dirty || v_field.touched));
   }
 
+  /** Get the error message for a specific form field */
   getFieldError(fieldName: string): string {
     const v_field = this.m_loginForm.get(fieldName);
     if (v_field?.errors) {

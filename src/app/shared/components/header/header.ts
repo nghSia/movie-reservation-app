@@ -37,10 +37,12 @@ export class Header {
 
   m_currentUser = this.s_authService.v_currentUser$;
 
+  /** Constructor */
   constructor() {
     this.m_currentUser = this.s_authService.v_currentUser$;
   }
 
+  /** Logout the current user */
   logout() {
     this.s_authService.logout();
     this.c_router.navigate(['/auth/login']);

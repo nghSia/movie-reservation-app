@@ -142,6 +142,7 @@ export class Register {
   m_loading = signal(false);
   m_error = signal<string>('');
 
+  /** Constructor */
   constructor() {
     this.m_registerForm = this.m_formBuilder.group(
       {
@@ -154,6 +155,7 @@ export class Register {
     );
   }
 
+  /** Handle form submission for registration */
   onSubmit() {
     if (this.m_registerForm.valid) {
       this.m_loading.set(true);
@@ -175,11 +177,13 @@ export class Register {
     }
   }
 
+  /** Check if a form field is invalid and touched */
   isFieldInvalid(p_fieldName: string): boolean {
     const v_field = this.m_registerForm.get(p_fieldName);
     return !!(v_field && v_field.invalid && (v_field.dirty || v_field.touched));
   }
 
+  /** Get the error message for a specific form field */
   getFieldError(p_fieldName: string): string {
     const v_field = this.m_registerForm.get(p_fieldName);
     if (v_field?.errors) {
