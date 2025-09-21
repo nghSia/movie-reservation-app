@@ -8,9 +8,9 @@ import { LoginRequest, RegisterRequest, User } from '../models/user.model';
 export class AuthService {
   private v_currentUser = signal<User | null>(null);
   public v_currentUser$ = this.v_currentUser.asReadonly();
-
   public v_isAdmin = computed(() => this.v_currentUser()?.role === 'ADMIN');
 
+  /** Mock user data */
   private v_userMocks: User[] = [
     {
       id: 1,
@@ -38,6 +38,7 @@ export class AuthService {
     }
   }
 
+  /** login into existing user account */
   login(p_credentials: LoginRequest): Observable<User> {
     const v_user = this.v_userMocks.find((u) => u.email === p_credentials.email);
     const v_password = this.v_passWords[p_credentials.email];
@@ -49,6 +50,7 @@ export class AuthService {
     }
   }
 
+  /** register a new user */
   register(p_userData: RegisterRequest): Observable<User> {
     const v_existingUser = this.v_userMocks.find((u) => u.email === p_userData.email);
     if (v_existingUser) {
@@ -69,19 +71,23 @@ export class AuthService {
     return of(v_newUser).pipe(delay(500));
   }
 
+  /** Logout the current user */
   logout(): void {
     this.v_currentUser.set(null);
     localStorage.removeItem('currentUser');
   }
 
+  /** Get the current logged-in user */
   getCurrentUser(): User | null {
     return this.v_currentUser();
   }
 
+  /** Get all users */
   getAllUsers(): Observable<User[]> {
     return of(this.v_userMocks).pipe(delay(300));
   }
 
+  /** delete a user */
   deleteUser(p_userId: number): Observable<void> {
     const v_index = this.v_userMocks.findIndex((u) => u.id === p_userId);
     if (v_index !== -1) {
@@ -96,21 +102,25 @@ export class AuthService {
     return throwError(() => new Error('Utilisateur non trouvé'));
   }
 
+  /** Get a mock token for the current user */
   getToken(): string | null {
     const v_user = this.v_currentUser();
     return v_user ? `mock-token-${v_user.id}` : null;
   }
 
+  /** Set the current user and save to local storage */
   setCurrentUser(p_user: User): void {
     this.v_currentUser.set(p_user);
     localStorage.setItem('currentUser', JSON.stringify(p_user));
   }
 
+  /** Save user data to local storage */
   private saveUsersToStorage(): void {
     localStorage.setItem('users', JSON.stringify(this.v_userMocks));
     localStorage.setItem('usersPassword', JSON.stringify(this.v_passWords));
   }
 
+  /** Load user data from local storage */
   private loadUsersFromStorage(): void {
     const v_savedUsers = localStorage.getItem('users');
     const v_savedPasswords = localStorage.getItem('usersPassword');
@@ -121,6 +131,7 @@ export class AuthService {
     }
   }
 
+  /** Clear all user data from local storage (for testing purposes) */
   clearAllUserData(): void {
     localStorage.removeItem('users');
     localStorage.removeItem('usersPassword');

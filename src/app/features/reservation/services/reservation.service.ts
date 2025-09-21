@@ -10,6 +10,7 @@ export class ReservationService {
   private v_reservations = signal<Reservation[]>([]);
   public v_reservations$ = this.v_reservations.asReadonly();
 
+  /** Load reservations from local storage */
   private loadFromLocalStorage() {
     try {
       const v_data = localStorage.getItem('reservations');
@@ -19,10 +20,12 @@ export class ReservationService {
     }
   }
 
+  /** Save reservations to local storage */
   private saveToLocalStorage() {
     localStorage.setItem('reservations', JSON.stringify(this.v_reservations()));
   }
 
+  /** Check if two sessions overlap */
   private overlapsSession(
     p_firstSessionStartISO: string,
     p_firstSessionEndISO: string,
@@ -36,20 +39,22 @@ export class ReservationService {
     return vfirstStart < vsecondEnd && vsecondStart < vfirstEnd;
   }
 
-  seatsLeft(room: MovieRoom, screening: Session): number {
+  /** Check how many seats are left in a room for a specific session */
+  seatsLeft(p_room: MovieRoom, p_session: Session): number {
     const booked = this.v_reservations()
       .filter(
         (r) =>
           r.status === 'CONFIRMED' &&
-          r.roomId === screening.roomId &&
-          r.startHour === screening.start &&
-          r.tmdbId === screening.tmdbId,
+          r.roomId === p_session.roomId &&
+          r.startHour === p_session.start &&
+          r.tmdbId === p_session.tmdbId,
       )
       .reduce((sum, r) => sum + r.quantity, 0);
 
-    return Math.max(0, room.capacity - booked);
+    return Math.max(0, p_room.capacity - booked);
   }
 
+  /** create a new reservation */
   createReservation(
     p_userId: string,
     p_session: Session,
