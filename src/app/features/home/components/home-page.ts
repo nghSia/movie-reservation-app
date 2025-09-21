@@ -1,15 +1,16 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, effect, ElementRef, inject, signal, ViewChild } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { MovieCard } from '../../../shared/components/movie-card/movie-card';
 import { TmdbMovie } from '../models/movie.model';
-import { TmdbService } from '../services/movie.service';
+import { TmdbService } from '../services/tmdb.service';
 
 type TabKey = 'now' | 'popular' | 'top';
 
 @Component({
   selector: 'app-home-page',
   standalone: true,
-  imports: [CommonModule, MovieCard],
+  imports: [CommonModule, MovieCard, RouterLink],
   template: `
     <section class="px-4 sm:px-6 lg:px-10 py-6 space-y-10">
       <div class="flex items-center gap-2">
@@ -44,7 +45,9 @@ type TabKey = 'now' | 'popular' | 'top';
         >
           @if (m_visibleMovies().length) {
             @for (movie of m_visibleMovies(); track movie.id; let index = $index) {
-              <app-movie-card [i_movie]="movie" [i_eager]="index === 0"></app-movie-card>
+              <a [routerLink]="['/movie', movie.id]" class="shrink-0">
+                <app-movie-card [i_movie]="movie" [i_eager]="index === 0"></app-movie-card>
+              </a>
             }
           } @else {
             <div class="flex gap-4">
@@ -69,8 +72,10 @@ type TabKey = 'now' | 'popular' | 'top';
       <div>
         <h2 class="mb-3 text-lg font-semibold">Aperçu</h2>
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-          @for (movie of m_visibleMovies() | slice: 0 : 10; track movie.id) {
-            <app-movie-card [i_movie]="movie" [i_eager]="true"></app-movie-card>
+          @for (movie of m_visibleMovies(); track movie.id; let index = $index) {
+            <a [routerLink]="['/movie', movie.id]" class="shrink-0">
+              <app-movie-card [i_movie]="movie" />
+            </a>
           }
         </div>
       </div>
@@ -82,22 +87,25 @@ export class HomePage {
 
   @ViewChild('carouselRail', { static: true }) m_carouselRailRef!: ElementRef<HTMLDivElement>;
 
+  m_activeTab = signal<TabKey>('now');
+  m_isLoading = signal(false);
+  m_visibleMovies = computed(() => this.m_moviesByTab()[this.m_activeTab()]);
+
+  /** Define available tabs */
   m_tabs: { key: TabKey; label: string }[] = [
     { key: 'now', label: 'À l’affiche' },
     { key: 'popular', label: 'Populaires' },
     { key: 'top', label: 'Mieux notés' },
   ];
 
-  m_activeTab = signal<TabKey>('now');
-  m_isLoading = signal(false);
+  /** Movies grouped by tab */
   private m_moviesByTab = signal<Record<TabKey, TmdbMovie[]>>({
     now: [],
     popular: [],
     top: [],
   });
 
-  m_visibleMovies = computed(() => this.m_moviesByTab()[this.m_activeTab()]);
-
+  /** constructor of the component */
   constructor() {
     effect(() => {
       const m_tab = this.m_activeTab();
@@ -105,6 +113,7 @@ export class HomePage {
     });
   }
 
+  /** Load movies for the given tab if not already loaded */
   private loadMoviesIfNeeded(p_tab: TabKey) {
     if (this.m_moviesByTab()[p_tab].length) return;
     this.m_isLoading.set(true);
@@ -125,6 +134,7 @@ export class HomePage {
     });
   }
 
+  /** Scroll the carousel left or right */
   scrollCarousel(dir: -1 | 1) {
     const v_rail = this.m_carouselRailRef?.nativeElement;
     if (!v_rail) return;

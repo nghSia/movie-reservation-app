@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, Input } from '@angular/core';
 import { TmdbMovie } from '../../../features/home/models/movie.model';
-import { TmdbService } from '../../../features/home/services/movie.service';
+import { TmdbService } from '../../../features/home/services/tmdb.service';
 
 @Component({
   selector: 'app-movie-card',
@@ -30,5 +30,7 @@ export class MovieCard {
   @Input() i_movie!: TmdbMovie;
   @Input() i_eager = false;
   private s_tmdbService = inject(TmdbService);
+
+  /** Get poster Url */
   m_img = computed(() => this.s_tmdbService.image(this.i_movie?.poster_path ?? null, 'w342'));
 }
