@@ -17,4 +17,9 @@ export const routes: Routes = [
     loadChildren: () =>
       import('./features/reservation/reservation.routes').then((m) => m.RESERVATION_ROUTES),
   },
+  {
+    path: 'movie',
+    loadChildren: () =>
+      import('./features/movie-details/movie-details.routes').then((m) => m.MOVIE_DETAILS_ROUTES),
+  },
 ];
