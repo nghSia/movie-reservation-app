@@ -1,7 +1,7 @@
 import { Injectable, signal } from '@angular/core';
-import { MovieRoom } from '../models/movie-room.model';
+import { MovieRoom } from '../../../shared/model/movie-room.model';
 import { Reservation } from '../models/reservation.model';
-import { Session } from '../models/session.model';
+import { Session } from '../../../shared/model/session.model';
 
 @Injectable({
   providedIn: 'root',

@@ -1,4 +1,3 @@
-export type MovieVersion = 'VO' | 'VOSTFR' | 'VF';
 export type TicketType = '-16' | '-26' | 'STUDENT' | 'ADULT' | 'SENIOR';
 export type ReservationStatus = 'CONFIRMED' | 'CANCELLED';
 
@@ -9,7 +8,7 @@ export interface Reservation {
   roomId: string;
   startHour: string;
   endHour: string;
-  version: MovieVersion;
+  version: string;
   ticketType: TicketType;
   price: number;
   quantity: number;
