@@ -1,11 +1,11 @@
 export type TicketType = '-16' | '-26' | 'STUDENT' | 'ADULT' | 'SENIOR';
-export type ReservationStatus = 'CONFIRMED' | 'CANCELLED';
+export type ReservationStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED';
 
 export interface Reservation {
-  id: string;
-  userId: string;
+  id: number;
+  userId: number;
   tmdbId: number;
-  roomId: string;
+  roomId: number;
   startHour: string;
   endHour: string;
   version: string;

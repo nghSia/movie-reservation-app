@@ -1,9 +1,9 @@
 import { Routes } from '@angular/router';
-import { Reservation } from './components/reservation';
+import { ReservationFilm } from './components/reservation-film';
 
 export const RESERVATION_ROUTES: Routes = [
   {
     path: '',
-    component: Reservation,
+    component: ReservationFilm,
   },
 ];
