@@ -104,12 +104,18 @@ import { SessionServices, SessionView } from '../services/session.service.ts';
               tmdbId: v_session.session.tmdbId,
               roomId: v_session.room.id,
               start: v_session.session.start,
+              end: v_session.session.end,
+              version: v_session.session.version,
             }"
           >
             <div class="text-sm">{{ v_session.session.version }}</div>
-            <div class="text-2xl font-bold">{{ v_session.session.start | date: 'HH:mm' }}</div>
-            <div class="text-xs opacity-80">(fin {{ v_session.session.end | date: 'HH:mm' }})</div>
-            <div class="mt-2 text-sm">Salle {{ v_session.room.name }}</div>
+            <div class="text-2xl font-bold">
+              {{ v_session.session.start | date: 'EEE d MMM HH:mm' : 'Europe/Paris' }}
+            </div>
+            <div class="text-2xl opacity-80">
+              fin {{ v_session.session.end | date: 'HH:mm' : 'Europe/Paris' }}
+            </div>
+            <div class="mt-2 text-sm">{{ v_session.room.name }}</div>
             <div class="text-xs mt-1" [class.text-rose-300]="v_session.seatsLeft === 0">
               {{
                 v_session.seatsLeft === 0 ? 'Complet' : v_session.seatsLeft + ' places restantes'

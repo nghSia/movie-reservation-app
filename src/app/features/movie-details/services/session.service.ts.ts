@@ -1,8 +1,8 @@
 import { inject, Injectable } from '@angular/core';
-import { Session } from '../../../shared/model/session.model';
-import { MovieRoom } from '../../../shared/model/movie-room.model';
-import { ReservationService } from '../../reservation/services/reservation.service';
 import { MOVIE_ROOMS_MOCK } from '../../../shared/mocks/movie-room-mock';
+import { MovieRoom } from '../../../shared/model/movie-room.model';
+import { Session } from '../../../shared/model/session.model';
+import { ReservationService } from '../../reservation/services/reservation.service';
 
 export interface SessionView {
   session: Session;
@@ -17,17 +17,18 @@ export class SessionServices {
   private readonly s_reservation = inject(ReservationService);
   private readonly m_rooms: MovieRoom[] = MOVIE_ROOMS_MOCK;
 
+  private m_sessionIdSeq = 1;
+
+  private nextSessionId(): number {
+    return this.m_sessionIdSeq++;
+  }
   /** Example session slots per day */
   private readonly BASE_SLOTS = [
-    { time: '10:45', roomId: '10', version: 'VOSTFR' as const },
-    { time: '12:30', roomId: '1', version: 'VO' as const },
-    { time: '14:15', roomId: '10', version: 'VOSTFR' as const },
-    { time: '16:00', roomId: '1', version: 'VO' as const },
-    { time: '17:45', roomId: '10', version: 'VOSTFR' as const },
-    { time: '19:30', roomId: '1', version: 'VO' as const },
-    { time: '21:00', roomId: '10', version: 'VOSTFR' as const },
+    { id: 1, time: '10:45', roomId: 10, version: 'VOSTFR' as const },
+    { id: 2, time: '14:15', roomId: 10, version: 'VOSTFR' as const },
+    { id: 3, time: '16:00', roomId: 1, version: 'VO' as const },
+    { id: 4, time: '19:30', roomId: 1, version: 'VO' as const },
   ];
-
   /** Get sessions for a movie, split between today and tomorrow */
   getSessionTimesForMovie(
     p_tmdbId: number,
@@ -44,19 +45,25 @@ export class SessionServices {
 
   /** Create sessions for a specific day */
   private buildDaySessions(p_dayOffset: number, p_tmdbId: number, p_runtime: number): Session[] {
-    const v_baseDate = this.atLocalMidnight(new Date());
-    v_baseDate.setDate(v_baseDate.getDate() + p_dayOffset);
+    // base = aujourd’hui à minuit (local)
+    const base = new Date();
+    base.setHours(0, 0, 0, 0);
+    base.setDate(base.getDate() + p_dayOffset);
 
-    return this.BASE_SLOTS.map((slot, idx) => {
-      const v_startISO = this.isoAtTime(v_baseDate, slot.time);
-      const v_endISO = this.addMinutesISO(v_startISO, p_runtime);
+    return this.BASE_SLOTS.map((slot) => {
+      // start = base + HH:mm du slot (local)
+      const [h, m] = slot.time.split(':').map(Number);
+      const v_start = new Date(base);
+      v_start.setHours(h, m, 0, 0);
+
+      const v_end = new Date(v_start.getTime() + p_runtime * 60_000);
 
       return {
-        id: `s-${p_dayOffset}-${idx}`,
+        id: slot.id,
         roomId: slot.roomId,
         tmdbId: p_tmdbId,
-        start: v_startISO,
-        end: v_endISO,
+        start: v_start.toISOString(),
+        end: v_end.toISOString(),
         version: slot.version,
       };
     });
@@ -76,52 +83,6 @@ export class SessionServices {
       });
       return { session: v_session, room: v_room, seatsLeft: v_seatsLeft };
     });
-  }
-
-  /** Get localtime at midnight */
-  private atLocalMidnight(p_date: Date): Date {
-    return new Date(p_date.getFullYear(), p_date.getMonth(), p_date.getDate(), 0, 0, 0, 0);
-  }
-
-  /** Convert hour string to ISO string */
-  private isoAtTime(p_baseDay: Date, p_hour: string): string {
-    const [v_hh, v_mm] = p_hour.split(':').map(Number);
-    const v_date = new Date(
-      p_baseDay.getFullYear(),
-      p_baseDay.getMonth(),
-      p_baseDay.getDate(),
-      v_hh,
-      v_mm,
-      0,
-      0,
-    );
-    return this.toLocalISO(v_date);
-  }
-
-  /** Add minutes to an ISO string date */
-  private addMinutesISO(p_startISO: string, p_minutes: number): string {
-    const v_date = new Date(p_startISO);
-    v_date.setMinutes(v_date.getMinutes() + p_minutes);
-    return this.toLocalISO(v_date);
-  }
-
-  /** Convert date to local ISO string */
-  private toLocalISO(p_date: Date): string {
-    const v_pad = (n: number) => String(Math.trunc(Math.abs(n))).padStart(2, '0');
-
-    const v_year = p_date.getFullYear();
-    const v_month = v_pad(p_date.getMonth() + 1);
-    const v_day = v_pad(p_date.getDate());
-    const v_hour = v_pad(p_date.getHours());
-    const v_min = v_pad(p_date.getMinutes());
-    const v_sec = v_pad(p_date.getSeconds());
-
-    const v_offsetMin = -p_date.getTimezoneOffset();
-    const v_sign = v_offsetMin >= 0 ? '+' : '-';
-    const v_offH = v_pad(Math.floor(Math.abs(v_offsetMin) / 60));
-    const v_offM = v_pad(Math.abs(v_offsetMin) % 60);
-
-    return `${v_year}-${v_month}-${v_day}T${v_hour}:${v_min}:${v_sec}${v_sign}${v_offH}:${v_offM}`;
   }
 
   /** Check if session is in the past */

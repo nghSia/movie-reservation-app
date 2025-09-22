@@ -1,5 +1,5 @@
 export interface MovieRoom {
-  id: string;
+  id: number;
   name: string;
   capacity: number;
 }

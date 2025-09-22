@@ -1,8 +1,8 @@
 export type MovieVersion = 'VO' | 'VOSTFR' | 'VF';
 
 export interface Session {
-  id: string;
-  roomId: string;
+  id: number;
+  roomId: number;
   tmdbId: number;
   start: string;
   end: string;
