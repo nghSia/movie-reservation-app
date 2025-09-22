@@ -71,7 +71,7 @@ type TabKey = 'now' | 'popular' | 'top';
 
       <div>
         <h2 class="mb-3 text-lg font-semibold">Aperçu</h2>
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 justify-items-center">
           @for (movie of m_visibleMovies(); track movie.id; let index = $index) {
             <a [routerLink]="['/movie', movie.id]" class="shrink-0">
               <app-movie-card [i_movie]="movie" />
