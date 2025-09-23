@@ -1,29 +1,32 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MovieVersion, Session } from '../../../shared/model/session.model';
 import { AuthService } from '../../auth/services/auth-service';
 import { Reservation, TicketType } from '../models/reservation.model';
 import { ReservationService } from '../services/reservation.service';
+import { TmdbService } from '../../home/services/tmdb.service';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { filter, switchMap } from 'rxjs';
 
 @Component({
   standalone: true,
   selector: 'app-reservation-film',
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="min-h-screen flex items-center justify-center p-6 bg-gray-950 text-white">
-      @if (m_reservation(); as r) {
-        <div class="w-full max-w-2xl bg-gray-900 rounded-2xl p-6 shadow-lg">
+    <div class="min-h-screen flex items-center justify-center py-8">
+      @if (m_reservation(); as v_res) {
+        <div class="w-full max-w-2xl bg-gray-100 rounded-2xl p-6 shadow-lg">
           <div class="grid grid-cols-[120px_1fr_auto] gap-4 items-center">
             <div
-              class="w-[120px] h-[180px] bg-gray-800 rounded-xl flex items-center justify-center overflow-hidden"
+              class="w-[120px] h-[180px] bg-white rounded-xl flex items-center justify-center overflow-hidden"
             >
-              @if (r.moviePosterPath) {
+              @if (v_posterUrl()) {
                 <img
                   class="w-full h-full object-cover"
-                  [src]="r.moviePosterPath!"
-                  [alt]="r.movieTitle || 'Poster'"
+                  [src]="v_posterUrl()!"
+                  [alt]="v_movieDetails()?.title || 'Poster'"
                 />
               } @else {
                 <span class="text-gray-500 text-sm">No Poster</span>
@@ -31,32 +34,31 @@ import { ReservationService } from '../services/reservation.service';
             </div>
 
             <div>
-              <h2 class="text-xl font-bold mb-1">{{ r.movieTitle || 'Film' }}</h2>
-              <p class="text-gray-300 text-sm">
-                {{ r.startHour | date: 'EEEE d MMMM • HH:mm' : 'Europe/Paris' }} —
-                {{ r.endHour | date: 'HH:mm' : 'Europe/Paris' }} • Salle #{{ r.roomId }} • Version
-                {{ r.version }}
+              <h2 class="text-xl font-bold mb-1">{{ v_movieDetails()?.title || 'Film' }}</h2>
+              <p class="text-black text-sm font-bold">
+                @if (v_res.startHour && v_res.endHour) {
+                  {{ v_res.startHour | date: 'EEEE d MMMM • HH:mm' : 'Europe/Paris' }} —
+                  {{ v_res.endHour | date: 'HH:mm' : 'Europe/Paris' }}
+                } @else {
+                  Horaire indisponible
+                }
               </p>
             </div>
-
-            <button class="text-red-400 hover:text-red-500 text-2xl" (click)="onCancel()">
-              🗑️
-            </button>
           </div>
 
           <div class="mt-6 space-y-4">
             <div>
-              <label class="block text-sm font-medium mb-1" [for]="typeId"
+              <label class="block text-sm font-medium mb-1" for="ticketType"
                 >Catégorie de client</label
               >
               <select
+                id="ticketType"
                 [ngModel]="m_selectedType()"
                 (ngModelChange)="m_selectedType.set($event)"
-                class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2"
+                class="w-full bg-white border border-gray-700 rounded-lg px-3 py-2"
               >
                 <option [ngValue]="undefined" disabled>Choisir...</option>
-
-                @for (entry of m_priceTable | keyvalue; track trackByKey($index, entry)) {
+                @for (entry of m_priceTable | keyvalue; track entry.key) {
                   <option [ngValue]="entry.key">
                     {{ entry.key }} — {{ entry.value | currency: 'EUR' }}
                   </option>
@@ -65,11 +67,12 @@ import { ReservationService } from '../services/reservation.service';
             </div>
 
             <div>
-              <label class="block text-sm font-medium mb-1 mt-4" [for]="qtyId">Quantité</label>
+              <label class="block text-sm font-medium mb-1 mt-4" for="quantity">Quantité</label>
               <select
+                id="quantity"
                 [ngModel]="m_quantity()"
                 (ngModelChange)="m_quantity.set($event)"
-                class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2"
+                class="w-full bg-white-800 border border-gray-700 rounded-lg px-3 py-2"
               >
                 @for (q of [1, 2, 3, 4, 5, 6, 7, 8]; track q) {
                   <option [ngValue]="q">{{ q }}</option>
@@ -78,7 +81,7 @@ import { ReservationService } from '../services/reservation.service';
             </div>
 
             @if (m_selectedType(); as type) {
-              <div class="bg-gray-800 rounded-lg p-3">
+              <div class="bg-white rounded-lg p-3">
                 <p>
                   Prix unitaire : <b>{{ m_unitPrice() | currency: 'EUR' }}</b>
                 </p>
@@ -88,9 +91,16 @@ import { ReservationService } from '../services/reservation.service';
               </div>
             }
 
-            <div class="flex justify-end">
+            <div class="flex justify-end gap-3">
               <button
-                class="px-4 py-2 bg-teal-400 text-black font-bold rounded-lg hover:bg-teal-300 disabled:opacity-50"
+                class="px-4 py-2 bg-pink-400 text-black font-bold rounded-lg hover:bg-pink-300 disabled:opacity-50"
+                (click)="onCancel()"
+              >
+                Cancel
+              </button>
+
+              <button
+                class="px-4 py-2 bg-pink-400 text-black font-bold rounded-lg hover:bg-pink-300 disabled:opacity-50"
                 [disabled]="!m_selectedType()"
                 (click)="onConfirm()"
               >
@@ -110,8 +120,9 @@ export class ReservationFilm {
   private c_router = inject(Router);
   private s_reservationService = inject(ReservationService);
   private s_authService = inject(AuthService);
-
+  private s_tmdbService = inject(TmdbService);
   private m_userId = 0;
+  private v_tmdbId = signal(0);
 
   m_reservation = signal<Reservation | null>(null);
   m_priceTable = this.s_reservationService.getPriceTable();
@@ -122,20 +133,38 @@ export class ReservationFilm {
   m_unitPrice = computed(() =>
     this.m_selectedType() ? this.m_priceTable[this.m_selectedType()!] : 0,
   );
-  m_totalPrice = computed(() => this.m_unitPrice() * (this.m_unitPrice() || 1));
+  m_totalPrice = computed(() => this.m_unitPrice() * (this.m_quantity() || 1));
 
+  /**
+   * Constructor of component
+   * - Get user Id
+   * - Get Data from query
+   * - Verify and create pending reservation
+   * - Save and verify partial patch
+   */
   constructor() {
-    this.m_userId = this.s_authService.getCurrentUser()!.id;
-    const qp = this.c_route.snapshot.queryParamMap;
-    const v_tmdbId = Number(qp.get('tmdbId'));
-    const v_roomId = Number(qp.get('roomId'));
-    const v_start = qp.get('start')!;
-    const v_end = qp.get('end')!;
-    const v_version = (qp.get('version') as MovieVersion)!;
+    const v_user = this.s_authService.getCurrentUser();
+    if (!v_user) {
+      this.c_router.navigateByUrl('/auth/login');
+      return;
+    }
+    this.m_userId = v_user.id;
 
+    const v_qp = this.c_route.snapshot.queryParamMap;
+    const v_movieId = Number(v_qp.get('tmdbId')) || 0;
+    const v_roomId = Number(v_qp.get('roomId'));
+    const v_start = v_qp.get('start')!;
+    const v_end = v_qp.get('end')!;
+    const v_version = (v_qp.get('version') as MovieVersion | null)!;
+    this.v_tmdbId.set(v_movieId);
+
+    if (v_movieId === 0 || !v_roomId || !v_start || !v_end || !v_version) {
+      this.c_router.navigateByUrl('/home');
+      return;
+    }
     const v_session: Session = {
       id: 0,
-      tmdbId: v_tmdbId,
+      tmdbId: v_movieId,
       roomId: v_roomId,
       start: v_start,
       end: v_end,
@@ -146,9 +175,10 @@ export class ReservationFilm {
       this.m_userId,
       v_session,
     );
+
     if (!v_pendingReservation) {
-      const v_title = qp.get('title') || undefined;
-      const v_poster = qp.get('poster') || undefined;
+      const v_title = v_qp.get('title') || undefined;
+      const v_poster = v_qp.get('poster') || undefined;
 
       v_pendingReservation = this.s_reservationService.createPendingReservation(
         this.m_userId,
@@ -165,13 +195,21 @@ export class ReservationFilm {
     effect(() => {
       const v_current = this.m_reservation();
       if (!v_current) return;
-      this.s_reservationService.updatePartial(v_current.id, {
-        ticketType: this.m_selectedType(),
-        quantity: this.m_quantity(),
+      const v_type = this.m_selectedType();
+      const v_qty = this.m_quantity() || 1;
+      if (v_current.ticketType === v_type && (v_current.quantity ?? 1) === v_qty) {
+        return;
+      }
+      untracked(() => {
+        this.s_reservationService.updatePartial(v_current.id, {
+          ticketType: v_type,
+          quantity: v_qty,
+        });
       });
     });
   }
 
+  /** Cancel reservation */
   onCancel() {
     const v_res = this.m_reservation();
     if (!v_res) return;
@@ -179,6 +217,7 @@ export class ReservationFilm {
     this.c_router.navigateByUrl('/home');
   }
 
+  /** Confirm reservation */
   onConfirm() {
     const v_res = this.m_reservation();
     if (!v_res) return;
@@ -187,15 +226,24 @@ export class ReservationFilm {
       alert('Select a client type');
       return;
     }
-    const qty = Math.max(1, Number(this.m_quantity()) || 1);
-    this.s_reservationService.confirmReservation(v_res.id, v_type, qty);
-    this.c_router.navigateByUrl('/my-reservation');
+    const v_qty = Math.max(1, Number(this.m_quantity()) || 1);
+    this.s_reservationService.confirmReservation(v_res.id, v_type, v_qty);
+    untracked(() => this.c_router.navigateByUrl('/home'));
   }
 
-  trackByKey(p_index: number, p_entry: { key: string; value: number }) {
-    return p_entry.key;
-  }
+  /** Get movie details */
+  readonly v_movieDetails = toSignal(
+    toObservable(this.v_tmdbId).pipe(
+      filter((id) => id > 0),
+      switchMap((id) => this.s_tmdbService.movieDetails(id)),
+    ),
+    { initialValue: null },
+  );
 
-  typeId = `ticketType-${Math.random().toString(36).slice(2)}`;
-  qtyId = `quantity-${Math.random().toString(36).slice(2)}`;
+  /** Get film poster */
+  readonly v_posterUrl = computed(() => {
+    const md = this.v_movieDetails();
+    const path = md?.poster_path ?? md?.poster_path ?? null;
+    return path ? this.s_tmdbService.image(path, 'w500') : null;
+  });
 }

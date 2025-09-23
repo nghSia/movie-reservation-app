@@ -6,4 +6,8 @@ export const RESERVATION_ROUTES: Routes = [
     path: '',
     component: ReservationFilm,
   },
+  {
+    path: '**',
+    redirectTo: '/home',
+  },
 ];
