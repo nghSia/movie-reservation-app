@@ -20,19 +20,21 @@ export class ReservationService {
   private v_reservations = signal<Reservation[]>([]);
   public v_reservations$ = this.v_reservations.asReadonly();
 
-  // /** Load reservations from local storage */
-  // private loadFromLocalStorage() {
-  //   try {
-  //     const v_data = localStorage.getItem('reservations');
-  //     if (!v_data) return;
-  //     const v_parsedData = JSON.parse(v_data) as Reservation[];
-  //     if (Array.isArray(v_parsedData)) {
-  //       this.v_reservations.set(v_parsedData);
-  //     }
-  //   } catch {
-  //     return [];
-  //   }
-  // }
+  /** Load reservations from local storage */
+  loadFromLocalStorage(): Reservation[] {
+    try {
+      const v_data = localStorage.getItem('reservations');
+      if (!v_data) return [];
+      const v_parsedData = JSON.parse(v_data) as Reservation[];
+      if (Array.isArray(v_parsedData)) {
+        this.v_reservations.set(v_parsedData);
+        return v_parsedData;
+      }
+      return [];
+    } catch {
+      return [];
+    }
+  }
 
   /** Get price table */
   getPriceTable(): PriceTable {
@@ -69,6 +71,27 @@ export class ReservationService {
     const vsecondStart = new Date(p_secondSessionStartISO).getTime();
     const vsecondEnd = new Date(p_secondSessionEndISO).getTime();
     return vfirstStart < vsecondEnd && vsecondStart < vfirstEnd;
+  }
+
+  /** Check if user have session conflitcs */
+  private hasTimeConflict(
+    p_userId: number,
+    p_startISO: string,
+    p_endISO: string,
+    p_excludeId?: number,
+    p_statuses?: Reservation['status'][],
+  ): boolean {
+    const s = Date.parse(p_startISO),
+      e = Date.parse(p_endISO);
+    if (!Number.isFinite(s) || !Number.isFinite(e) || s >= e) return false;
+
+    const statusesToCheck = p_statuses ?? (['PENDING', 'CONFIRMED'] as Reservation['status'][]);
+    return this.v_reservations().some((r) => {
+      if (r.userId !== p_userId) return false;
+      if (p_excludeId && r.id === p_excludeId) return false;
+      if (!statusesToCheck.includes(r.status)) return false;
+      return this.overlapsSession(p_startISO, p_endISO, r.startHour, r.endHour);
+    });
   }
 
   /** Check how many seats are left in a room for a specific session */
@@ -141,13 +164,19 @@ export class ReservationService {
     if (v_index < 0) return;
 
     if (!p_ticketType) {
-      throw new Error('ticketType manquant pour la confirmation');
+      throw new Error('Ticket type missing');
     }
     if (!Number.isFinite(p_quantity) || p_quantity < 1) {
-      throw new Error('quantity invalide (>= 1 attendue)');
+      throw new Error('quantity invalide (at least 1)');
     }
 
     const v_current = v_listRes[v_index];
+
+    if (
+      this.hasTimeConflict(v_current.userId, v_current.startHour, v_current.endHour, v_current.id)
+    ) {
+      throw new Error('You already have a reservation at this time.');
+    }
 
     const v_sameRes =
       v_current.status === 'CONFIRMED' &&
@@ -198,7 +227,7 @@ export class ReservationService {
     const v_start = new Date(v_res.startHour).getTime();
     const v_now = Date.now();
     if (isNaN(v_start) || v_start < v_now) {
-      throw new Error('Impossible de confirmer: la séance est déjà passée.');
+      throw new Error('The session is already passed.');
     }
 
     const v_ticketType = v_res.ticketType ?? 'ADULT';
@@ -222,16 +251,24 @@ export class ReservationService {
 
   /** save update pending reservation */
   updatePartial(id: number, patch: Partial<Reservation>): Reservation | undefined {
-    const v_listRes = this.v_reservations();
-    const v_index = v_listRes.findIndex((v_res) => v_res.id === id);
+    const v_listReservation = this.v_reservations();
+    const v_index = v_listReservation.findIndex((v_res) => v_res.id === id);
     if (v_index < 0) return;
 
-    const v_updated = { ...v_listRes[v_index], ...patch };
-    const v_newList = [...v_listRes];
-    v_newList[v_index] = v_updated as Reservation;
+    const v_prev = v_listReservation[v_index];
+    const v_next: Reservation = { ...v_prev, ...patch };
+
+    const v_sameRes =
+      (v_next.ticketType ?? null) === (v_prev.ticketType ?? null) &&
+      (v_next.quantity ?? 1) === (v_prev.quantity ?? 1);
+
+    if (v_sameRes) return v_prev;
+
+    const v_newList = [...v_listReservation];
+    v_newList[v_index] = v_next;
     this.v_reservations.set(v_newList);
     this.saveToLocalStorage();
-    return v_updated as Reservation;
+    return v_next;
   }
 
   /** Find pending reservation by user*/
