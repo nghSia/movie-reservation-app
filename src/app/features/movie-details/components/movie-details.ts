@@ -98,7 +98,7 @@ import { SessionServices, SessionView } from '../services/session.service.ts';
               disabled:opacity-40 disabled:cursor-not-allowed
               disabled:hover:opacity-40 disabled:pointer-events-none
               disabled:grayscale"
-            [disabled]="v_isPastSession(v_session) || v_session.seatsLeft === 0"
+            [disabled]="isPastSession(v_session) || v_session.seatsLeft === 0"
             [routerLink]="['/reservation']"
             [queryParams]="{
               tmdbId: v_session.session.tmdbId,
@@ -165,7 +165,7 @@ export class MovieDetails {
   });
 
   /** Check if a session is in the past */
-  v_isPastSession = (p_session: SessionView) => {
+  isPastSession = (p_session: SessionView) => {
     return this.s_sessionService.isPastSession(p_session);
   };
 }

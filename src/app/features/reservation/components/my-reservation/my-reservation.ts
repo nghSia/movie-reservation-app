@@ -1,11 +1,10 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
-import { ReservationService } from '../../services/reservation.service';
-import { Reservation } from '../../models/reservation.model';
+import { Component, computed, effect, inject, signal } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../../auth/services/auth-service';
 import { TmdbService } from '../../../home/services/tmdb.service';
-import { firstValueFrom } from 'rxjs';
+import { Reservation } from '../../models/reservation.model';
+import { ReservationService } from '../../services/reservation.service';
 
 @Component({
   standalone: true,
@@ -35,48 +34,47 @@ import { firstValueFrom } from 'rxjs';
           </div>
         </div>
 
-        <!-- Actives: Pending + Confirmed -->
         @if (!showCancelled()) {
           <section class="space-y-3">
             <h3 class="text-lg font-semibold">En attente de confirmation</h3>
             @if (pending().length) {
               <div class="space-y-3">
-                @for (r of pending(); track r.id) {
+                @for (v_res of pending(); track v_res.id) {
                   <div class="flex justify-between items-center p-4 bg-gray-900 rounded-2xl">
-                    <!-- LEFT: poster + infos -->
                     <div class="flex items-start gap-3">
-                      @if (getMoviePoster(r.tmdbId); as p) {
+                      @if (getPoster(v_res); as p) {
                         <img
                           [src]="p"
                           class="w-16 h-24 rounded-lg object-cover shrink-0"
-                          alt="{{ getMovieTitle(r.tmdbId) }}"
+                          alt="{{ getTitle(v_res) }}"
                         />
                       } @else {
-                        <div class="w-16 h-24 rounded-lg bg-gray-800 shrink-0"></div>
+                        <div class="w-16 h-24 rounded-lg bg-gray-900 shrink-0"></div>
                       }
                       <div class="flex-1">
-                        <div class="font-bold">{{ getMovieTitle(r.tmdbId) }}</div>
-                        <div class="text-sm text-gray-400">
-                          {{ r.startHour | date: 'EEE d MMM HH:mm' : 'Europe/Paris' }}
-                          • Salle #{{ r.roomId }} • {{ r.version }}
+                        <div class="font-bold text-gray-300">{{ getTitle(v_res) }}</div>
+                        <div class="text-sm text-gray-300">
+                          {{ v_res.startHour | date: 'EEE d MMM HH:mm' : 'Europe/Paris' }}
+                          • Salle #{{ v_res.roomId }} • {{ v_res.version }}
                         </div>
                       </div>
                     </div>
 
-                    <!-- RIGHT: actions -->
                     <div class="flex gap-2">
-                      <button
-                        class="px-3 py-1 bg-teal-400 text-black rounded-lg hover:bg-teal-300"
-                        (click)="goFinalize(r)"
-                      >
-                        Finaliser
-                      </button>
-                      <button
-                        class="px-3 py-1 border border-gray-600 rounded-lg hover:bg-gray-800"
-                        (click)="cancel(r)"
-                      >
-                        Annuler
-                      </button>
+                      @if (!isPastSession(v_res.startHour)) {
+                        <button
+                          class="px-3 py-1 bg-blue-400 text-black rounded-lg hover:bg-blue-300"
+                          (click)="validateReservation(v_res)"
+                        >
+                          Finaliser
+                        </button>
+                        <button
+                          class="px-3 py-1 border bg-gray-400 border-gray-600 rounded-lg hover:bg-gray-500"
+                          (click)="cancelReservation(v_res)"
+                        >
+                          Annuler
+                        </button>
+                      }
                     </div>
                   </div>
                 }
@@ -90,31 +88,31 @@ import { firstValueFrom } from 'rxjs';
             <h3 class="text-lg font-semibold">Confirmées</h3>
             @if (confirmed().length) {
               <div class="space-y-3">
-                @for (r of confirmed(); track r.id) {
+                @for (v_res of confirmed(); track v_res.id) {
                   <div class="p-4 bg-gray-900 rounded-2xl">
                     <div class="flex items-start gap-3">
-                      @if (getMoviePoster(r.tmdbId); as p) {
+                      @if (getPoster(v_res); as p) {
                         <img
                           [src]="p"
                           class="w-16 h-24 rounded-lg object-cover shrink-0"
-                          alt="{{ getMovieTitle(r.tmdbId) }}"
+                          alt="{{ getTitle(v_res) }}"
                         />
                       } @else {
                         <div class="w-16 h-24 rounded-lg bg-gray-800 shrink-0"></div>
                       }
                       <div class="flex-1">
-                        <div class="font-bold">{{ getMovieTitle(r.tmdbId) }}</div>
-                        <div class="text-sm text-gray-400">
-                          {{ r.startHour | date: 'EEE d MMM HH:mm' : 'Europe/Paris' }}
-                          • Salle #{{ r.roomId }} • {{ r.version }}
+                        <div class="font-bold text-gray-300">{{ getTitle(v_res) }}</div>
+                        <div class="text-sm text-gray-300">
+                          {{ v_res.startHour | date: 'EEE d MMM HH:mm' : 'Europe/Paris' }}
+                          • Salle #{{ v_res.roomId }} • {{ v_res.version }}
                         </div>
 
-                        @if (r.price !== undefined) {
+                        @if (v_res.price !== undefined) {
                           <div class="mt-1 text-gray-300">
-                            {{ r.quantity || 1 }} ×
-                            {{ r.price! / (r.quantity || 1) | currency: 'EUR' }}
+                            {{ v_res.quantity || 1 }} ×
+                            {{ v_res.price! / (v_res.quantity || 1) | currency: 'EUR' }}
                             <span class="opacity-60 mx-1">•</span>
-                            <b>{{ r.price | currency: 'EUR' }}</b>
+                            <b>{{ v_res.price | currency: 'EUR' }}</b>
                           </div>
                         }
                       </div>
@@ -128,40 +126,49 @@ import { firstValueFrom } from 'rxjs';
           </section>
         }
 
-        <!-- Onglet Annulées -->
         @if (showCancelled()) {
           <section class="space-y-3">
             <h3 class="text-lg font-semibold">Annulées</h3>
             @if (cancelled().length) {
               <div class="space-y-3">
-                @for (r of cancelled(); track r.id) {
+                @for (v_res of cancelled(); track v_res.id) {
                   <div class="flex justify-between items-center p-4 bg-gray-900 rounded-2xl">
                     <div class="flex items-start gap-3">
-                      @if (getMoviePoster(r.tmdbId); as p) {
+                      @if (getPoster(v_res); as p) {
                         <img
                           [src]="p"
                           class="w-16 h-24 rounded-lg object-cover shrink-0"
-                          alt="{{ getMovieTitle(r.tmdbId) }}"
+                          alt="{{ getTitle(v_res) }}"
                         />
                       } @else {
                         <div class="w-16 h-24 rounded-lg bg-gray-800 shrink-0"></div>
                       }
                       <div class="flex-1">
-                        <div class="font-bold">{{ getMovieTitle(r.tmdbId) }}</div>
-                        <div class="text-sm text-gray-400">
-                          {{ r.startHour | date: 'EEE d MMM HH:mm' : 'Europe/Paris' }}
-                          • Salle #{{ r.roomId }} • {{ r.version }}
+                        <div class="font-bold text-gray-300">{{ getTitle(v_res) }}</div>
+                        <div class="text-sm text-gray-300">
+                          {{ v_res.startHour | date: 'EEE d MMM HH:mm' : 'Europe/Paris' }}
+                          • Salle #{{ v_res.roomId }} • {{ v_res.version }}
+
+                          @if (v_res.price !== undefined) {
+                            <div class="mt-1 text-gray-300">
+                              {{ v_res.quantity || 1 }} ×
+                              {{ v_res.price! / (v_res.quantity || 1) | currency: 'EUR' }}
+                              <span class="opacity-60 mx-1">•</span>
+                              <b>{{ v_res.price | currency: 'EUR' }}</b>
+                            </div>
+                          }
                         </div>
                       </div>
                     </div>
 
-                    <button
-                      class="px-3 py-1 bg-teal-400 text-black rounded-lg hover:bg-teal-300 disabled:opacity-50"
-                      [disabled]="isPast(r)"
-                      (click)="reserveAgain(r)"
-                    >
-                      Reserve again
-                    </button>
+                    @if (!isPastSession(v_res.startHour)) {
+                      <button
+                        class="px-3 py-1 bg-teal-400 text-black rounded-lg hover:bg-teal-300 disabled:opacity-50"
+                        (click)="validateReservation(v_res)"
+                      >
+                        Reserve again
+                      </button>
+                    }
                   </div>
                 }
               </div>
@@ -175,17 +182,14 @@ import { firstValueFrom } from 'rxjs';
   `,
 })
 export class MyReservation {
-  private c_router = inject(Router);
   private s_reservationService = inject(ReservationService);
   private s_authService = inject(AuthService);
   private s_tmdbService = inject(TmdbService);
-
   showCancelled = signal(false);
 
-  /** Get current user */
-  private currentUser = computed(() => {
-    const u = this.s_authService.v_currentUser$?.();
-    if (u) return u;
+  private m_currentUser = computed(() => {
+    const v_user = this.s_authService.v_currentUser$?.();
+    if (v_user) return v_user;
     try {
       return JSON.parse(localStorage.getItem('currentUser') ?? 'null');
     } catch {
@@ -194,9 +198,10 @@ export class MyReservation {
   });
 
   /** Current user id */
-  private userId = computed(() => Number(this.currentUser()?.id ?? NaN));
+  private m_userId = computed(() => Number(this.m_currentUser()?.id ?? NaN));
 
-  private listReservation = computed<Reservation[]>(() => {
+  /** Get all reservations */
+  private m_listReservation = computed<Reservation[]>(() => {
     const s = this.s_reservationService.v_reservations$?.() ?? [];
     if (s.length) return s;
     try {
@@ -206,102 +211,96 @@ export class MyReservation {
     }
   });
 
-  private all = computed<Reservation[]>(() =>
-    this.listReservation().filter((v_res) => Number(v_res.userId) === this.userId()),
+  /** Get all reservation of current user */
+  private m_allUserRes = computed<Reservation[]>(() =>
+    this.m_listReservation().filter((v_res) => Number(v_res.userId) === this.m_userId()),
   );
 
   private byStart(a: Reservation, b: Reservation) {
     return new Date(a.startHour).getTime() - new Date(b.startHour).getTime();
   }
 
+  /** Sort pending reservation */
   pending = computed(() =>
-    this.all()
-      .filter((r) => r.status === 'PENDING')
+    this.m_allUserRes()
+      .filter((v_res) => v_res.status === 'PENDING')
       .slice()
       .sort(this.byStart),
   );
+
+  /** Sort confirmed reservation */
   confirmed = computed(() =>
-    this.all()
-      .filter((r) => r.status === 'CONFIRMED')
+    this.m_allUserRes()
+      .filter((v_res) => v_res.status === 'CONFIRMED')
       .slice()
       .sort(this.byStart),
   );
+
+  /** Sort cancelled reservation */
   cancelled = computed(() =>
-    this.all()
-      .filter((r) => r.status === 'CANCELLED')
+    this.m_allUserRes()
+      .filter((v_res) => v_res.status === 'CANCELLED')
       .slice()
       .sort(this.byStart),
   );
 
-  private moviesById = signal<Record<number, { title: string; posterUrl: string | null }>>({});
+  private m_moviesById = signal<Record<number, { title: string; posterUrl: string | null }>>({});
 
+  /**
+   * Verify we have all film information
+   */
   constructor() {
     effect(() => {
-      const ids = Array.from(new Set(this.all().map((r) => r.tmdbId)));
-      const missing = ids.filter((id) => !this.moviesById()[id]);
-      if (!missing.length) return;
+      const v_idRes = Array.from(new Set(this.m_allUserRes().map((v_res) => v_res.tmdbId)));
+      const v_missing = v_idRes.filter((v_id) => !this.m_moviesById()[v_id]);
+      if (!v_missing.length) return;
 
-      missing.forEach(async (id) => {
+      v_missing.forEach(async (v_id) => {
         try {
-          const movie = await firstValueFrom(this.s_tmdbService.movieDetails(id));
+          const movie = await firstValueFrom(this.s_tmdbService.movieDetails(v_id));
           const title = movie?.title ?? '(Sans titre)';
           const posterUrl = movie?.poster_path
             ? `https://image.tmdb.org/t/p/w185${movie.poster_path}`
             : null;
-          this.moviesById.update((m) => ({ ...m, [id]: { title, posterUrl } }));
+          this.m_moviesById.update((m) => ({ ...m, [v_id]: { title, posterUrl } }));
         } catch {
-          this.moviesById.update((m) => ({
+          this.m_moviesById.update((m) => ({
             ...m,
-            [id]: { title: '(Film indisponible)', posterUrl: null },
+            [v_id]: { title: '(Film indisponible)', posterUrl: null },
           }));
         }
       });
     });
   }
 
-  getMovieTitle = (tmdbId: number) => this.moviesById()[tmdbId]?.title ?? 'Film';
-  getMoviePoster = (tmdbId: number) => this.moviesById()[tmdbId]?.posterUrl ?? null;
+  /** Get Movie Title */
+  getTitle = (p_reservation: Reservation) =>
+    p_reservation.movieTitle ?? this.m_moviesById()[p_reservation.tmdbId]?.title ?? 'Film';
 
-  /** Finalize pending reservation */
-  goFinalize(p_reservation: Reservation) {
-    if (
-      !p_reservation.tmdbId ||
-      !p_reservation.roomId ||
-      !p_reservation.startHour ||
-      !p_reservation.endHour ||
-      !p_reservation.version
-    ) {
-      alert('Infos de séance manquantes pour cette réservation.');
-      return;
-    }
+  /** Get Movie Poster */
+  getPoster = (p_reservation: Reservation) =>
+    p_reservation.moviePosterPath ?? this.m_moviesById()[p_reservation.tmdbId]?.posterUrl ?? null;
 
-    this.c_router.navigate(['/reservation'], {
-      queryParams: {
-        tmdbId: p_reservation.tmdbId,
-        roomId: p_reservation.roomId,
-        start: p_reservation.startHour,
-        end: p_reservation.endHour,
-        version: p_reservation.version,
-      },
-    });
+  /** Validate reservation */
+  validateReservation(p_reservation: Reservation) {
+    if (this.s_reservationService.isPast(p_reservation.startHour)) return;
+    this.s_reservationService.updateReservation(
+      { id: p_reservation.id, userId: p_reservation.userId, tmdbId: p_reservation.tmdbId },
+      { status: 'CONFIRMED' },
+    );
   }
 
   /** Cancel reservation */
-  cancel(p_reservation: Reservation) {
-    this.s_reservationService.cancelReservation(p_reservation.id);
+  cancelReservation(p_reservation: Reservation) {
+    if (this.s_reservationService.isPast(p_reservation.startHour)) return;
+    this.s_reservationService.updateReservation(
+      { id: p_reservation.id, userId: p_reservation.userId, tmdbId: p_reservation.tmdbId },
+      { status: 'CANCELLED' },
+    );
   }
 
-  /** Reserve again */
-  reserveAgain(r: Reservation) {
-    try {
-      this.s_reservationService.reserveAgain(r.id);
-    } catch (obs_ex) {
-      alert((obs_ex as Error).message);
-    }
-  }
-
-  /** check if reservation is in past */
-  isPast(p_reservation: Reservation): boolean {
-    return new Date(p_reservation.startHour).getTime() < Date.now();
+  /** Verify if the session is passed */
+  isPastSession(p_startHour: string) {
+    return this.s_reservationService.isPast(p_startHour);
   }
 }

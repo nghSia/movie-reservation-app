@@ -13,28 +13,26 @@ const PRICE_TABLE: PriceTable = {
   SENIOR: 6,
 };
 
+type ReservationMutableFields =
+  | 'roomId'
+  | 'startHour'
+  | 'endHour'
+  | 'version'
+  | 'ticketType'
+  | 'price'
+  | 'quantity'
+  | 'movieTitle'
+  | 'moviePosterPath'
+  | 'createdAt'
+  | 'status';
+type ReservationPatch = Partial<Pick<Reservation, ReservationMutableFields>>;
+
 @Injectable({
   providedIn: 'root',
 })
 export class ReservationService {
   private v_reservations = signal<Reservation[]>([]);
   public v_reservations$ = this.v_reservations.asReadonly();
-
-  /** Load reservations from local storage */
-  loadFromLocalStorage(): Reservation[] {
-    try {
-      const v_data = localStorage.getItem('reservations');
-      if (!v_data) return [];
-      const v_parsedData = JSON.parse(v_data) as Reservation[];
-      if (Array.isArray(v_parsedData)) {
-        this.v_reservations.set(v_parsedData);
-        return v_parsedData;
-      }
-      return [];
-    } catch {
-      return [];
-    }
-  }
 
   /** Get price table */
   getPriceTable(): PriceTable {
@@ -116,6 +114,32 @@ export class ReservationService {
     p_movieTitle?: string,
     p_moviePosterPath?: string,
   ): Reservation {
+    if (this.hasTimeConflict(p_userId, p_session.start, p_session.end)) {
+      throw new Error('You already have a reservation at this time.');
+    }
+    const clash = this.findByComposite(p_userId, p_session.tmdbId, p_session.start);
+    if (clash) {
+      if (clash.status === 'CANCELLED') {
+        return this.updateReservation(
+          { id: clash.id, userId: clash.userId, tmdbId: clash.tmdbId },
+          {
+            roomId: p_session.roomId,
+            startHour: p_session.start,
+            endHour: p_session.end,
+            version: p_session.version,
+            quantity: 1,
+            ticketType: 'ADULT',
+            price: this.getPriceForCustomerType('ADULT', 1),
+            status: 'PENDING',
+            createdAt: new Date().toISOString(),
+            movieTitle: p_movieTitle ?? clash.movieTitle,
+            moviePosterPath: p_moviePosterPath ?? clash.moviePosterPath,
+          },
+        )!;
+      }
+      throw new Error('DUPLICATE_RESERVATION');
+    }
+
     const v_pending: Reservation = {
       id: this.nextId(),
       userId: p_userId,
@@ -153,116 +177,6 @@ export class ReservationService {
     return this.getUsersReservations(p_userId).filter((v_res) => v_res.status === p_status);
   }
 
-  /** Confirm a pending reservation */
-  confirmReservation(
-    p_id: number,
-    p_ticketType: TicketType,
-    p_quantity = 1,
-  ): Reservation | undefined {
-    const v_listRes = this.v_reservations();
-    const v_index = v_listRes.findIndex((v_res) => v_res.id === p_id);
-    if (v_index < 0) return;
-
-    if (!p_ticketType) {
-      throw new Error('Ticket type missing');
-    }
-    if (!Number.isFinite(p_quantity) || p_quantity < 1) {
-      throw new Error('quantity invalide (at least 1)');
-    }
-
-    const v_current = v_listRes[v_index];
-
-    if (
-      this.hasTimeConflict(v_current.userId, v_current.startHour, v_current.endHour, v_current.id)
-    ) {
-      throw new Error('You already have a reservation at this time.');
-    }
-
-    const v_sameRes =
-      v_current.status === 'CONFIRMED' &&
-      v_current.ticketType === p_ticketType &&
-      (v_current.quantity ?? 1) === p_quantity;
-
-    if (v_sameRes) return v_current;
-
-    const v_price = this.getPriceForCustomerType(p_ticketType, p_quantity);
-
-    const updated: Reservation = {
-      ...v_current,
-      ticketType: p_ticketType,
-      quantity: p_quantity,
-      price: v_price,
-      status: 'CONFIRMED',
-    };
-
-    const v_newList = [...v_listRes];
-    v_newList[v_index] = updated;
-    this.v_reservations.set(v_newList);
-    this.saveToLocalStorage();
-
-    return updated;
-  }
-
-  /** Cancel a reservation */
-  cancelReservation(id: number): Reservation | undefined {
-    const v_listRes = this.v_reservations();
-    const v_index = v_listRes.findIndex((v_res) => Number(v_res.id) === Number(id));
-    if (v_index < 0) return;
-
-    const v_current = v_listRes[v_index];
-    const v_updated: Reservation = { ...v_current, status: 'CANCELLED' };
-
-    const v_newList = [...v_listRes];
-    v_newList[v_index] = v_updated;
-
-    this.v_reservations.set(v_newList);
-    this.saveToLocalStorage();
-    return v_updated;
-  }
-
-  /** Reserve again after cancel */
-  reserveAgain(id: number): Reservation | undefined {
-    const v_listRes = this.v_reservations();
-    const v_index = v_listRes.findIndex((v_res) => Number(v_res.id) === Number(id));
-    if (v_index < 0) return;
-
-    const v_current = v_listRes[v_index];
-    if (new Date(v_current.startHour).getTime() < Date.now()) {
-      throw new Error('La séance est déjà passée');
-    }
-
-    const updated: Reservation = { ...v_current, status: 'CONFIRMED' };
-
-    const newList = [...v_listRes];
-    newList[v_index] = updated;
-
-    this.v_reservations.set(newList);
-    this.saveToLocalStorage();
-    return updated;
-  }
-
-  /** save update pending reservation */
-  updatePartial(id: number, patch: Partial<Reservation>): Reservation | undefined {
-    const v_listReservation = this.v_reservations();
-    const v_index = v_listReservation.findIndex((v_res) => v_res.id === id);
-    if (v_index < 0) return;
-
-    const v_prev = v_listReservation[v_index];
-    const v_next: Reservation = { ...v_prev, ...patch };
-
-    const v_sameRes =
-      (v_next.ticketType ?? null) === (v_prev.ticketType ?? null) &&
-      (v_next.quantity ?? 1) === (v_prev.quantity ?? 1);
-
-    if (v_sameRes) return v_prev;
-
-    const v_newList = [...v_listReservation];
-    v_newList[v_index] = v_next;
-    this.v_reservations.set(v_newList);
-    this.saveToLocalStorage();
-    return v_next;
-  }
-
   /** Find pending reservation by user*/
   findPendingReservationBySession(p_userId: number, p_session: Session) {
     return this.v_reservations().find(
@@ -273,5 +187,75 @@ export class ReservationService {
         v_res.startHour === p_session.start &&
         v_res.status === 'PENDING',
     );
+  }
+
+  /** Normalise une ISO (UTC) à la minute, ex: 2025-09-24T16:00 */
+  private toMinuteKey(iso: string): string {
+    const d = new Date(iso);
+    const yyyy = d.getUTCFullYear();
+    const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(d.getUTCDate()).padStart(2, '0');
+    const hh = String(d.getUTCHours()).padStart(2, '0');
+    const mi = String(d.getUTCMinutes()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
+  }
+
+  /** True si la séance est passée par rapport à maintenant */
+  public isPast(startISO: string): boolean {
+    return new Date(startISO).getTime() < Date.now();
+  }
+
+  /** Cherche une résa (même user+tmdbId+minute de début), quel que soit le statut */
+  private findByComposite(userId: number, tmdbId: number, startISO: string) {
+    const key = this.toMinuteKey(startISO);
+    return this.v_reservations().find(
+      (r) =>
+        Number(r.userId) === Number(userId) &&
+        Number(r.tmdbId) === Number(tmdbId) &&
+        this.toMinuteKey(r.startHour) === key,
+    );
+  }
+
+  /** Find a reservation by key information */
+  private findReservationByKeys(match: { id: number; userId: number; tmdbId: number }) {
+    const list = this.v_reservations();
+    const idx = list.findIndex(
+      (r) =>
+        Number(r.id) === Number(match.id) &&
+        Number(r.userId) === Number(match.userId) &&
+        Number(r.tmdbId) === Number(match.tmdbId),
+    );
+    if (idx < 0) return null;
+    return { idx, current: list[idx], list };
+  }
+
+  /** update a specific reservation by given values*/
+  public updateReservation(
+    match: { id: number; userId: number; tmdbId: number },
+    patch: ReservationPatch,
+  ): Reservation | undefined {
+    const found = this.findReservationByKeys(match);
+    if (!found) return;
+
+    const { idx, current, list } = found;
+
+    if ('id' in patch || 'userId' in patch || 'tmdbId' in patch) {
+      throw new Error('IMMUTABLE_KEYS');
+    }
+
+    const updated: Reservation = {
+      ...current,
+      ...patch,
+      id: current.id,
+      userId: current.userId,
+      tmdbId: current.tmdbId,
+    };
+
+    const newList = [...list];
+    newList[idx] = updated;
+
+    this.v_reservations.set(newList);
+    this.saveToLocalStorage();
+    return updated;
   }
 }

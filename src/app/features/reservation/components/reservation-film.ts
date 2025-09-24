@@ -1,14 +1,15 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, Router } from '@angular/router';
+import { filter, switchMap } from 'rxjs';
 import { MovieVersion, Session } from '../../../shared/model/session.model';
 import { AuthService } from '../../auth/services/auth-service';
+import { TmdbService } from '../../home/services/tmdb.service';
 import { Reservation, TicketType } from '../models/reservation.model';
 import { ReservationService } from '../services/reservation.service';
-import { TmdbService } from '../../home/services/tmdb.service';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { filter, switchMap } from 'rxjs';
 
 @Component({
   standalone: true,
@@ -121,6 +122,7 @@ export class ReservationFilm {
   private s_reservationService = inject(ReservationService);
   private s_authService = inject(AuthService);
   private s_tmdbService = inject(TmdbService);
+  private c_snackBar = inject(MatSnackBar);
   private m_userId = 0;
   private v_tmdbId = signal(0);
 
@@ -180,12 +182,22 @@ export class ReservationFilm {
       const v_title = v_qp.get('title') || undefined;
       const v_poster = v_qp.get('poster') || undefined;
 
-      v_pendingReservation = this.s_reservationService.createPendingReservation(
-        this.m_userId,
-        v_session,
-        v_title,
-        v_poster,
-      );
+      try {
+        v_pendingReservation = this.s_reservationService.createPendingReservation(
+          this.m_userId,
+          v_session,
+          v_title,
+          v_poster,
+        );
+      } catch {
+        this.c_snackBar.open('You already have a reservation at this time', 'Fermer', {
+          duration: 4000,
+          horizontalPosition: 'center',
+          verticalPosition: 'top',
+        });
+        this.c_router.navigateByUrl('/home');
+        return;
+      }
     }
 
     this.m_reservation.set(v_pendingReservation);
@@ -201,10 +213,10 @@ export class ReservationFilm {
         return;
       }
       untracked(() => {
-        this.s_reservationService.updatePartial(v_current.id, {
-          ticketType: v_type,
-          quantity: v_qty,
-        });
+        this.s_reservationService.updateReservation(
+          { id: v_current.id, userId: v_current.userId, tmdbId: v_current.tmdbId },
+          { ticketType: v_type, quantity: v_qty },
+        );
       });
     });
   }
@@ -213,7 +225,8 @@ export class ReservationFilm {
   onCancel() {
     const v_res = this.m_reservation();
     if (!v_res) return;
-    this.s_reservationService.cancelReservation(v_res.id);
+
+    this.cancelReservation(v_res);
     this.c_router.navigateByUrl('/home');
   }
 
@@ -221,13 +234,15 @@ export class ReservationFilm {
   onConfirm() {
     const v_res = this.m_reservation();
     if (!v_res) return;
+
     const v_type = this.m_selectedType();
     if (!v_type) {
       alert('Select a client type');
       return;
     }
     const v_qty = Math.max(1, Number(this.m_quantity()) || 1);
-    this.s_reservationService.confirmReservation(v_res.id, v_type, v_qty);
+
+    this.validateReservation(v_res, v_type, v_qty);
     untracked(() => this.c_router.navigateByUrl('/home'));
   }
 
@@ -242,8 +257,31 @@ export class ReservationFilm {
 
   /** Get film poster */
   readonly v_posterUrl = computed(() => {
-    const md = this.v_movieDetails();
-    const path = md?.poster_path ?? md?.poster_path ?? null;
+    const path = this.v_movieDetails()?.poster_path ?? null;
     return path ? this.s_tmdbService.image(path, 'w500') : null;
   });
+
+  /** Validate reservation */
+  public validateReservation(p_reservation: Reservation, p_type: TicketType, p_qty: number) {
+    if (this.s_reservationService.isPast(p_reservation.startHour)) return;
+
+    this.s_reservationService.updateReservation(
+      { id: p_reservation.id, userId: p_reservation.userId, tmdbId: p_reservation.tmdbId },
+      {
+        status: 'CONFIRMED',
+        ticketType: p_type,
+        quantity: p_qty,
+        price: this.s_reservationService.getPriceForCustomerType(p_type, p_qty),
+      },
+    );
+  }
+
+  /** Cancel reservation */
+  public cancelReservation(p_reservation: Reservation) {
+    if (this.s_reservationService.isPast(p_reservation.startHour)) return;
+    this.s_reservationService.updateReservation(
+      { id: p_reservation.id, userId: p_reservation.userId, tmdbId: p_reservation.tmdbId },
+      { status: 'CANCELLED' },
+    );
+  }
 }
