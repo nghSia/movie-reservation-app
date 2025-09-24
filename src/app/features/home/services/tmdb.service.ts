@@ -26,33 +26,16 @@ export class TmdbService {
         TmdbListResponse<TmdbMovie>
       >(`${this.v_env.tmdb.baseUrl}/movie/now_playing`, { params: { page } })
       .pipe(
-        map((r) => r.results),
-        shareReplay(1),
-      );
-  }
-
-  /** Get popular movies */
-  popular(page = 1): Observable<TmdbMovie[]> {
-    return this.c_http
-      .get<
-        TmdbListResponse<TmdbMovie>
-      >(`${this.v_env.tmdb.baseUrl}/movie/popular`, { params: { page } })
-      .pipe(
-        map((r) => r.results),
+        map((r) => r.results.slice(0, 10)),
         shareReplay(1),
       );
   }
 
   /** Get top rated movies */
-  topRated(page = 1): Observable<TmdbMovie[]> {
-    return this.c_http
-      .get<
-        TmdbListResponse<TmdbMovie>
-      >(`${this.v_env.tmdb.baseUrl}/movie/top_rated`, { params: { page } })
-      .pipe(
-        map((r) => r.results),
-        shareReplay(1),
-      );
+  public getNowPlayingTopRated(): Observable<TmdbMovie[]> {
+    return this.nowPlaying().pipe(
+      map((movies) => [...movies].sort((a, b) => (b.vote_average ?? 0) - (a.vote_average ?? 0))),
+    );
   }
 
   /** Get movie details by id */

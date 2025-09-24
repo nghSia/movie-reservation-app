@@ -5,7 +5,7 @@ import { MovieCard } from '../../../shared/components/movie-card/movie-card';
 import { TmdbMovie } from '../models/movie.model';
 import { TmdbService } from '../services/tmdb.service';
 
-type TabKey = 'now' | 'popular' | 'top';
+type TabKey = 'now' | 'top';
 
 @Component({
   selector: 'app-home-page',
@@ -94,14 +94,12 @@ export class HomePage {
   /** Define available tabs */
   m_tabs: { key: TabKey; label: string }[] = [
     { key: 'now', label: 'À l’affiche' },
-    { key: 'popular', label: 'Populaires' },
     { key: 'top', label: 'Mieux notés' },
   ];
 
   /** Movies grouped by tab */
   private m_moviesByTab = signal<Record<TabKey, TmdbMovie[]>>({
     now: [],
-    popular: [],
     top: [],
   });
 
@@ -120,9 +118,7 @@ export class HomePage {
     const v_obs =
       p_tab === 'now'
         ? this.s_tmdbService.nowPlaying()
-        : p_tab === 'popular'
-          ? this.s_tmdbService.popular()
-          : this.s_tmdbService.topRated();
+        : this.s_tmdbService.getNowPlayingTopRated();
     v_obs.subscribe({
       next: (obs_movies) => {
         const v_nextCache = { ...this.m_moviesByTab() };

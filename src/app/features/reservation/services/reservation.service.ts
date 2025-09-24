@@ -190,14 +190,14 @@ export class ReservationService {
   }
 
   /** Normalise une ISO (UTC) à la minute, ex: 2025-09-24T16:00 */
-  private toMinuteKey(iso: string): string {
-    const d = new Date(iso);
-    const yyyy = d.getUTCFullYear();
-    const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
-    const dd = String(d.getUTCDate()).padStart(2, '0');
-    const hh = String(d.getUTCHours()).padStart(2, '0');
-    const mi = String(d.getUTCMinutes()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
+  private toMinuteKey(p_iso: string): string {
+    const v_d = new Date(p_iso);
+    const v_yyyy = v_d.getUTCFullYear();
+    const v_mm = String(v_d.getUTCMonth() + 1).padStart(2, '0');
+    const v_dd = String(v_d.getUTCDate()).padStart(2, '0');
+    const v_hh = String(v_d.getUTCHours()).padStart(2, '0');
+    const v_mi = String(v_d.getUTCMinutes()).padStart(2, '0');
+    return `${v_yyyy}-${v_mm}-${v_dd}T${v_hh}:${v_mi}`;
   }
 
   /** True si la séance est passée par rapport à maintenant */
@@ -206,56 +206,56 @@ export class ReservationService {
   }
 
   /** Cherche une résa (même user+tmdbId+minute de début), quel que soit le statut */
-  private findByComposite(userId: number, tmdbId: number, startISO: string) {
-    const key = this.toMinuteKey(startISO);
+  private findByComposite(p_userId: number, p_tmdbId: number, p_startISO: string) {
+    const v_key = this.toMinuteKey(p_startISO);
     return this.v_reservations().find(
       (r) =>
-        Number(r.userId) === Number(userId) &&
-        Number(r.tmdbId) === Number(tmdbId) &&
-        this.toMinuteKey(r.startHour) === key,
+        Number(r.userId) === Number(p_userId) &&
+        Number(r.tmdbId) === Number(p_tmdbId) &&
+        this.toMinuteKey(r.startHour) === v_key,
     );
   }
 
   /** Find a reservation by key information */
-  private findReservationByKeys(match: { id: number; userId: number; tmdbId: number }) {
-    const list = this.v_reservations();
-    const idx = list.findIndex(
-      (r) =>
-        Number(r.id) === Number(match.id) &&
-        Number(r.userId) === Number(match.userId) &&
-        Number(r.tmdbId) === Number(match.tmdbId),
+  private findReservationByKeys(p_match: { id: number; userId: number; tmdbId: number }) {
+    const v_listRes = this.v_reservations();
+    const v_index = v_listRes.findIndex(
+      (v_res) =>
+        Number(v_res.id) === Number(p_match.id) &&
+        Number(v_res.userId) === Number(p_match.userId) &&
+        Number(v_res.tmdbId) === Number(p_match.tmdbId),
     );
-    if (idx < 0) return null;
-    return { idx, current: list[idx], list };
+    if (v_index < 0) return null;
+    return { v_index, v_current: v_listRes[v_index], v_listRes };
   }
 
   /** update a specific reservation by given values*/
   public updateReservation(
-    match: { id: number; userId: number; tmdbId: number },
-    patch: ReservationPatch,
+    p_match: { id: number; userId: number; tmdbId: number },
+    p_patch: ReservationPatch,
   ): Reservation | undefined {
-    const found = this.findReservationByKeys(match);
-    if (!found) return;
+    const v_found = this.findReservationByKeys(p_match);
+    if (!v_found) return;
 
-    const { idx, current, list } = found;
+    const { v_index, v_current, v_listRes } = v_found;
 
-    if ('id' in patch || 'userId' in patch || 'tmdbId' in patch) {
+    if ('id' in p_patch || 'userId' in p_patch || 'tmdbId' in p_patch) {
       throw new Error('IMMUTABLE_KEYS');
     }
 
-    const updated: Reservation = {
-      ...current,
-      ...patch,
-      id: current.id,
-      userId: current.userId,
-      tmdbId: current.tmdbId,
+    const v_updated: Reservation = {
+      ...v_current,
+      ...p_patch,
+      id: v_current.id,
+      userId: v_current.userId,
+      tmdbId: v_current.tmdbId,
     };
 
-    const newList = [...list];
-    newList[idx] = updated;
+    const v_newList = [...v_listRes];
+    v_newList[v_index] = v_updated;
 
-    this.v_reservations.set(newList);
+    this.v_reservations.set(v_newList);
     this.saveToLocalStorage();
-    return updated;
+    return v_updated;
   }
 }
