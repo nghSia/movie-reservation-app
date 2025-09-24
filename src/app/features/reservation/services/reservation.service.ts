@@ -206,12 +206,15 @@ export class ReservationService {
   /** Cancel a reservation */
   cancelReservation(id: number): Reservation | undefined {
     const v_listRes = this.v_reservations();
-    const v_index = v_listRes.findIndex((v_res) => v_res.id === id);
+    const v_index = v_listRes.findIndex((v_res) => Number(v_res.id) === Number(id));
     if (v_index < 0) return;
 
-    const v_updated: Reservation = { ...v_listRes[v_index], status: 'CANCELLED' };
+    const v_current = v_listRes[v_index];
+    const v_updated: Reservation = { ...v_current, status: 'CANCELLED' };
+
     const v_newList = [...v_listRes];
     v_newList[v_index] = v_updated;
+
     this.v_reservations.set(v_newList);
     this.saveToLocalStorage();
     return v_updated;
@@ -220,33 +223,22 @@ export class ReservationService {
   /** Reserve again after cancel */
   reserveAgain(id: number): Reservation | undefined {
     const v_listRes = this.v_reservations();
-    const v_index = v_listRes.findIndex((v_res) => v_res.id === id);
+    const v_index = v_listRes.findIndex((v_res) => Number(v_res.id) === Number(id));
     if (v_index < 0) return;
 
-    const v_res = v_listRes[v_index];
-    const v_start = new Date(v_res.startHour).getTime();
-    const v_now = Date.now();
-    if (isNaN(v_start) || v_start < v_now) {
-      throw new Error('The session is already passed.');
+    const v_current = v_listRes[v_index];
+    if (new Date(v_current.startHour).getTime() < Date.now()) {
+      throw new Error('La séance est déjà passée');
     }
 
-    const v_ticketType = v_res.ticketType ?? 'ADULT';
-    const v_quantity = v_res.quantity ?? 1;
+    const updated: Reservation = { ...v_current, status: 'CONFIRMED' };
 
-    const v_updated: Reservation = {
-      ...v_res,
-      status: 'CONFIRMED',
-      ticketType: v_ticketType,
-      quantity: v_quantity,
-      price: this.getPriceForCustomerType(v_ticketType, v_quantity),
-      createdAt: new Date().toISOString(),
-    };
+    const newList = [...v_listRes];
+    newList[v_index] = updated;
 
-    const v_newList = [...v_listRes];
-    v_newList[v_index] = v_updated;
-    this.v_reservations.set(v_newList);
+    this.v_reservations.set(newList);
     this.saveToLocalStorage();
-    return v_updated;
+    return updated;
   }
 
   /** save update pending reservation */
