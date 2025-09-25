@@ -167,7 +167,7 @@ export class Register {
       this.s_authService.register(userData).subscribe({
         next: () => {
           this.m_loading.set(false);
-          this.c_router.navigate(['/home']);
+          this.c_router.navigate(['/auth/login']);
         },
         error: (err) => {
           this.m_loading.set(false);

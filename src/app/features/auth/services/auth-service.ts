@@ -7,7 +7,9 @@ import { LoginRequest, RegisterRequest, User } from '../models/user.model';
 })
 export class AuthService {
   private v_currentUser = signal<User | null>(null);
+  private v_users = signal<User[]>([]);
   public v_currentUser$ = this.v_currentUser.asReadonly();
+  public v_users$ = this.v_users;
   public v_isAdmin = computed(() => this.v_currentUser()?.role === 'ADMIN');
 
   /** Mock user data */
@@ -32,9 +34,9 @@ export class AuthService {
   constructor() {
     this.loadUsersFromStorage();
 
-    const savedUser = localStorage.getItem('currentUser');
-    if (savedUser) {
-      this.v_currentUser.set(JSON.parse(savedUser));
+    const v_savedUser = localStorage.getItem('currentUser');
+    if (v_savedUser) {
+      this.v_currentUser.set(JSON.parse(v_savedUser));
     }
   }
 
@@ -66,7 +68,7 @@ export class AuthService {
     this.v_userMocks.push(v_newUser);
     this.v_passWords[p_userData.email] = p_userData.password;
 
-    this.saveUsersToStorage();
+    this.saveUsersToStorage([...this.v_userMocks]);
 
     return of(v_newUser).pipe(delay(500));
   }
@@ -84,22 +86,27 @@ export class AuthService {
 
   /** Get all users */
   getAllUsers(): Observable<User[]> {
-    return of(this.v_userMocks).pipe(delay(300));
+    return of(this.v_users()).pipe(delay(300));
   }
 
   /** delete a user */
   deleteUser(p_userId: number): Observable<void> {
-    const v_index = this.v_userMocks.findIndex((u) => u.id === p_userId);
-    if (v_index !== -1) {
-      const v_deletedUser = this.v_userMocks[v_index];
-      this.v_userMocks.splice(v_index, 1);
-      if (v_deletedUser && v_deletedUser.email) {
-        delete this.v_passWords[v_deletedUser.email];
-      }
-      this.saveUsersToStorage();
-      return of(void 0).pipe(delay(300));
+    const v_listUser = this.v_users();
+    const v_index = v_listUser.findIndex((v_user) => v_user.id === p_userId);
+    if (v_index === -1) {
+      return throwError(() => new Error('Utilisateur non trouvé'));
     }
-    return throwError(() => new Error('Utilisateur non trouvé'));
+
+    const v_email = v_listUser[v_index]?.email;
+    const v_next = v_listUser.filter((v_user) => v_user.id !== p_userId);
+
+    if (v_email) {
+      delete this.v_passWords[v_email];
+    }
+
+    this.saveUsersToStorage(v_next);
+
+    return of(void 0).pipe(delay(300));
   }
 
   /** Get a mock token for the current user */
@@ -115,8 +122,11 @@ export class AuthService {
   }
 
   /** Save user data to local storage */
-  private saveUsersToStorage(): void {
-    localStorage.setItem('users', JSON.stringify(this.v_userMocks));
+  private saveUsersToStorage(p_users?: User[]): void {
+    const v_toSave = p_users ?? this.v_userMocks;
+    this.v_userMocks = v_toSave;
+    this.v_users.set(v_toSave);
+    localStorage.setItem('users', JSON.stringify(v_toSave));
     localStorage.setItem('usersPassword', JSON.stringify(this.v_passWords));
   }
 
@@ -125,8 +135,15 @@ export class AuthService {
     const v_savedUsers = localStorage.getItem('users');
     const v_savedPasswords = localStorage.getItem('usersPassword');
 
-    if (v_savedUsers && v_savedPasswords) {
-      this.v_userMocks = JSON.parse(v_savedUsers);
+    if (v_savedUsers) {
+      const v_users = JSON.parse(v_savedUsers) as User[];
+      this.v_userMocks = v_users;
+      this.v_users.set(v_users);
+    } else {
+      this.v_users.set([]);
+    }
+
+    if (v_savedPasswords) {
       this.v_passWords = JSON.parse(v_savedPasswords);
     }
   }
@@ -138,5 +155,18 @@ export class AuthService {
     localStorage.removeItem('currentUser');
     localStorage.removeItem('authToken');
     this.loadUsersFromStorage();
+  }
+
+  /** Load all users */
+  public loadUsers(): void {
+    this.loadUsersFromStorage();
+  }
+
+  /** update user role */
+  public updateUserRole(p_userId: number, p_role: 'USER' | 'ADMIN'): void {
+    const v_next = this.v_users().map((v_user) =>
+      v_user.id === p_userId ? { ...v_user, p_role } : v_user,
+    );
+    this.saveUsersToStorage(v_next);
   }
 }

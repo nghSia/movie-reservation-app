@@ -22,4 +22,8 @@ export const routes: Routes = [
     loadChildren: () =>
       import('./features/movie-details/movie-details.routes').then((m) => m.MOVIE_DETAILS_ROUTES),
   },
+  {
+    path: 'admin',
+    loadChildren: () => import('./features/admin/admin-routes').then((m) => m.ADMIN_ROUTES),
+  },
 ];

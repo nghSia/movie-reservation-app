@@ -16,13 +16,16 @@ import { AuthService } from '../../../features/auth/services/auth-service';
         <nav>
           <ul class="flex space-x-4">
             @if (this.m_currentUser()) {
-              <li>
-                <a routerLink="reservation/my-reservation" class="hover:text-blue-200"
-                  >My reservation</a
-                >
-              </li>
+              @if (this.m_currentUser()?.role === 'USER') {
+                <li>
+                  <a routerLink="reservation/my-reservation" class="hover:text-blue-200"
+                    >My reservation</a
+                  >
+                </li>
+              }
               @if (this.m_currentUser()?.role === 'ADMIN') {
                 <li><a routerLink="/admin" class="hover:text-blue-200">Admin</a></li>
+                <li><a routerLink="/admin/stats" class="hover:text-blue-200">Stats</a></li>
               }
               <li><button (click)="logout()" class="hover:text-blue-200">Logout</button></li>
             } @else {
