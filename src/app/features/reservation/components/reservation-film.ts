@@ -18,10 +18,12 @@ import { ReservationService } from '../services/reservation.service';
   template: `
     <div class="min-h-screen flex items-center justify-center py-8">
       @if (m_reservation(); as v_res) {
-        <div class="w-full max-w-2xl bg-gray-100 rounded-2xl p-6 shadow-lg">
+        <div
+          class="w-full max-w-2xl bg-secondary-50 border border-secondary-100 rounded-2xl p-6 shadow-soft"
+        >
           <div class="grid grid-cols-[120px_1fr_auto] gap-4 items-center">
             <div
-              class="w-[120px] h-[180px] bg-white rounded-xl flex items-center justify-center overflow-hidden"
+              class="w-[120px] h-[180px] bg-white border border-secondary-100 rounded-xl flex items-center justify-center overflow-hidden"
             >
               @if (v_posterUrl()) {
                 <img
@@ -30,13 +32,15 @@ import { ReservationService } from '../services/reservation.service';
                   [alt]="v_movieDetails()?.title || 'Poster'"
                 />
               } @else {
-                <span class="text-gray-500 text-sm">No Poster</span>
+                <span class="text-secondary-500 text-sm">No Poster</span>
               }
             </div>
 
             <div>
-              <h2 class="text-xl font-bold mb-1">{{ v_movieDetails()?.title || 'Film' }}</h2>
-              <p class="text-black text-sm font-bold">
+              <h2 class="text-xl font-bold mb-1 text-secondary-900">
+                {{ v_movieDetails()?.title || 'Film' }}
+              </h2>
+              <p class="text-secondary-700 text-sm font-bold">
                 @if (v_res.startHour && v_res.endHour) {
                   {{ v_res.startHour | date: 'EEEE d MMMM • HH:mm' : 'Europe/Paris' }} —
                   {{ v_res.endHour | date: 'HH:mm' : 'Europe/Paris' }}
@@ -49,14 +53,16 @@ import { ReservationService } from '../services/reservation.service';
 
           <div class="mt-6 space-y-4">
             <div>
-              <label class="block text-sm font-medium mb-1" for="ticketType"
-                >Catégorie de client</label
-              >
+              <label class="block text-sm font-medium mb-1 text-secondary-800" for="ticketType">
+                Catégorie de client
+              </label>
               <select
                 id="ticketType"
                 [ngModel]="m_selectedType()"
                 (ngModelChange)="m_selectedType.set($event)"
-                class="w-full bg-white border border-gray-700 rounded-lg px-3 py-2"
+                class="w-full bg-white border border-secondary-200 rounded-lg px-3 py-2
+                   focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-300
+                   hover:bg-secondary-100 hover:text-secondary-900 transition-colors"
               >
                 <option [ngValue]="undefined" disabled>Choisir...</option>
                 @for (entry of m_priceTable | keyvalue; track entry.key) {
@@ -68,12 +74,16 @@ import { ReservationService } from '../services/reservation.service';
             </div>
 
             <div>
-              <label class="block text-sm font-medium mb-1 mt-4" for="quantity">Quantité</label>
+              <label class="block text-sm font-medium mb-1 mt-4 text-secondary-800" for="quantity">
+                Quantité
+              </label>
               <select
                 id="quantity"
                 [ngModel]="m_quantity()"
                 (ngModelChange)="m_quantity.set($event)"
-                class="w-full bg-white-800 border border-gray-700 rounded-lg px-3 py-2"
+                class="w-full bg-white border border-secondary-200 rounded-lg px-3 py-2
+                   focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-300
+                   hover:bg-secondary-100 hover:text-secondary-900 transition-colors"
               >
                 @for (q of [1, 2, 3, 4, 5, 6, 7, 8]; track q) {
                   <option [ngValue]="q">{{ q }}</option>
@@ -82,26 +92,34 @@ import { ReservationService } from '../services/reservation.service';
             </div>
 
             @if (m_selectedType(); as type) {
-              <div class="bg-white rounded-lg p-3">
-                <p>
-                  Prix unitaire : <b>{{ m_unitPrice() | currency: 'EUR' }}</b>
+              <div class="bg-white border border-secondary-100 rounded-lg p-3">
+                <p class="text-secondary-800">
+                  Prix unitaire :
+                  <b class="text-secondary-900">{{ m_unitPrice() | currency: 'EUR' }}</b>
                 </p>
-                <p>
-                  Total : <b>{{ m_totalPrice() | currency: 'EUR' }}</b>
+                <p class="text-secondary-800">
+                  Total :
+                  <b class="text-secondary-900">{{ m_totalPrice() | currency: 'EUR' }}</b>
                 </p>
               </div>
             }
 
             <div class="flex justify-end gap-3">
               <button
-                class="px-4 py-2 bg-pink-400 text-black font-bold rounded-lg hover:bg-pink-300 disabled:opacity-50"
+                class="px-4 py-2 rounded-lg bg-primary-500 text-white font-semibold
+                   hover:bg-secondary-100 hover:text-secondary-900 transition-colors
+                   focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-300
+                   disabled:opacity-50"
                 (click)="onCancel()"
               >
                 Cancel
               </button>
 
               <button
-                class="px-4 py-2 bg-pink-400 text-black font-bold rounded-lg hover:bg-pink-300 disabled:opacity-50"
+                class="px-4 py-2 rounded-lg bg-primary-500 text-white font-semibold
+                   hover:bg-secondary-100 hover:text-secondary-900 transition-colors
+                   focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-300
+                   disabled:opacity-50"
                 [disabled]="!m_selectedType()"
                 (click)="onConfirm()"
               >
@@ -111,7 +129,7 @@ import { ReservationService } from '../services/reservation.service';
           </div>
         </div>
       } @else {
-        <p>Aucune réservation trouvée.</p>
+        <p class="text-secondary-700">Aucune réservation trouvée.</p>
       }
     </div>
   `,

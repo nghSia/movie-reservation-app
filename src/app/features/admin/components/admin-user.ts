@@ -16,23 +16,25 @@ interface User {
   selector: 'app-admin-users',
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="p-6 max-w-5xl mx-auto text-white">
+    <div class="p-6 max-w-5xl mx-auto text-secondary-900">
       <h1 class="text-2xl font-bold mb-4">Gestion des utilisateurs</h1>
 
-      <div class="flex justify-between items-center mb-4">
+      <div class="flex flex-wrap gap-3 justify-between items-center mb-4">
         <input
           [ngModel]="m_research()"
           (ngModelChange)="m_research.set($event)"
           placeholder="Rechercher (email, nom)"
-          class="bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 w-80"
+          class="bg-white border border-secondary-200 rounded-xl px-3 py-2 w-80 max-w-full
+             focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-300
+             hover:bg-secondary-100 hover:text-secondary-900 transition-colors"
         />
-        <div class="text-sm text-gray-400">Total: {{ filtered().length }}</div>
+        <div class="text-sm text-secondary-600">Total: {{ filtered().length }}</div>
       </div>
 
-      <div class="overflow-x-auto rounded-2xl border border-gray-800">
-        <table class="w-full text-sm bg-gray-950">
-          <thead class="bg-gray-900 text-gray-300">
-            <tr>
+      <div class="overflow-x-auto rounded-2xl border border-secondary-200 bg-white">
+        <table class="w-full text-sm">
+          <thead class="bg-secondary-50 text-secondary-700">
+            <tr class="border-b border-secondary-200">
               <th class="text-left px-4 py-3">ID</th>
               <th class="text-left px-4 py-3">Email</th>
               <th class="text-left px-4 py-3">Nom</th>
@@ -42,13 +44,20 @@ interface User {
           </thead>
           <tbody>
             @for (v_user of filtered(); track v_user.id) {
-              <tr class="border-t border-gray-800">
-                <td class="px-4 py-3">{{ v_user.id }}</td>
-                <td class="px-4 py-3">{{ v_user.email }}</td>
-                <td class="px-4 py-3">{{ v_user.name || '—' }}</td>
+              <tr class="border-t border-secondary-100">
+                <td class="px-4 py-3 hover:bg-secondary-100 transition-colors">{{ v_user.id }}</td>
+                <td class="px-4 py-3 hover:bg-secondary-100 transition-colors">
+                  {{ v_user.email }}
+                </td>
+                <td class="px-4 py-3 hover:bg-secondary-100 transition-colors">
+                  {{ v_user.name || '—' }}
+                </td>
+
                 <td class="px-4 py-3">
                   <select
-                    class="bg-gray-900 border border-gray-700 rounded-lg px-2 py-1"
+                    class="bg-white border border-secondary-200 rounded-lg px-2 py-1
+                       focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-300
+                       hover:bg-secondary-100 hover:text-secondary-900 transition-colors"
                     [disabled]="v_user.id === m_currentUserId()"
                     [ngModel]="v_user.role"
                     (ngModelChange)="onChangeRole(v_user, $event)"
@@ -57,10 +66,14 @@ interface User {
                     <option [ngValue]="'ADMIN'">ADMIN</option>
                   </select>
                 </td>
+
                 <td class="px-4 py-3 text-right">
                   <button
-                    class="px-3 py-1 border border-gray-600 rounded-lg hover:bg-gray-800
-                         disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="px-3 py-1 rounded-lg
+                       bg-primary-500 text-white border border-primary-500
+                       hover:bg-secondary-100 hover:text-secondary-900 transition-colors
+                       focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-200
+                       disabled:opacity-50 disabled:cursor-not-allowed"
                     [disabled]="v_user.id === m_currentUserId()"
                     (click)="onDelete(v_user)"
                   >
@@ -70,7 +83,9 @@ interface User {
               </tr>
             } @empty {
               <tr>
-                <td colspan="5" class="px-4 py-8 text-center text-gray-500">Aucun utilisateur</td>
+                <td colspan="5" class="px-4 py-8 text-center text-secondary-500">
+                  Aucun utilisateur
+                </td>
               </tr>
             }
           </tbody>

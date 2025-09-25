@@ -11,7 +11,6 @@ import {
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth-service';
 
-// Validateur personnalisé pour la confirmation de mot de passe
 function passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
   const password = control.get('password');
   const confirmPassword = control.get('confirmPassword');
@@ -28,108 +27,123 @@ function passwordMatchValidator(control: AbstractControl): ValidationErrors | nu
   imports: [CommonModule, ReactiveFormsModule],
   template: `
     <div
-      class="min-h-screen text-black flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 rounded-2xl"
+      class="max-w-md w-full mx-auto my-12 sm:my-16 space-y-8 bg-white border border-secondary-100 rounded-3xl p-6 shadow-soft"
     >
-      <div class="max-w-md w-full space-y-8">
+      <div>
+        <h2 class="mt-2 text-center text-3xl font-extrabold text-secondary-900">Créer un compte</h2>
+      </div>
+
+      <form [formGroup]="m_registerForm" (ngSubmit)="onSubmit()" class="mt-6 space-y-6">
         <div>
-          <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">Créer un compte</h2>
+          <label for="name" class="block text-sm font-medium text-secondary-800">Nom complet</label>
+          <input
+            id="name"
+            type="text"
+            formControlName="name"
+            class="mt-1 block w-full px-3 py-2 border border-secondary-200 rounded-xl shadow-sm
+                 bg-white text-secondary-900
+                 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-300
+                 hover:bg-secondary-100 hover:text-secondary-900 transition-colors"
+            [class.border-red-500]="isFieldInvalid('name')"
+          />
+          @if (isFieldInvalid('name')) {
+            <p class="mt-1 text-sm text-red-600">
+              {{ getFieldError('name') }}
+            </p>
+          }
         </div>
 
-        <form [formGroup]="m_registerForm" (ngSubmit)="onSubmit()" class="mt-8 space-y-6">
-          <div>
-            <label for="name" class="block text-sm font-medium text-gray-700"> Nom complet </label>
-            <input
-              id="name"
-              type="text"
-              formControlName="name"
-              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              [class.border-red-500]="isFieldInvalid('name')"
-            />
-            @if (isFieldInvalid('name')) {
-              <p class="mt-1 text-sm text-red-600">
-                {{ getFieldError('name') }}
-              </p>
-            }
-          </div>
-
-          <div>
-            <label for="email" class="block text-sm font-medium text-gray-700">
-              Adresse email
-            </label>
-            <input
-              id="email"
-              type="email"
-              formControlName="email"
-              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              [class.border-red-500]="isFieldInvalid('email')"
-            />
-            @if (isFieldInvalid('email')) {
-              <p class="mt-1 text-sm text-red-600">
-                {{ getFieldError('email') }}
-              </p>
-            }
-          </div>
-
-          <div>
-            <label for="password" class="block text-sm font-medium text-gray-700">
-              Mot de passe
-            </label>
-            <input
-              id="password"
-              type="password"
-              formControlName="password"
-              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              [class.border-red-500]="isFieldInvalid('password')"
-            />
-            @if (isFieldInvalid('password')) {
-              <p class="mt-1 text-sm text-red-600">
-                {{ getFieldError('password') }}
-              </p>
-            }
-          </div>
-
-          <div>
-            <label for="confirmPassword" class="block text-sm font-medium text-gray-700">
-              Confirmer le mot de passe
-            </label>
-            <input
-              id="confirmPassword"
-              type="password"
-              formControlName="confirmPassword"
-              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              [class.border-red-500]="isFieldInvalid('confirmPassword')"
-            />
-            @if (isFieldInvalid('confirmPassword')) {
-              <p class="mt-1 text-sm text-red-600">
-                {{ getFieldError('confirmPassword') }}
-              </p>
-            }
-          </div>
-
-          <div>
-            <button
-              type="submit"
-              [disabled]="m_registerForm.invalid || m_loading()"
-              class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-pink-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 disabled:opacity-50"
-            >
-              @if (m_loading()) {
-                <span
-                  class="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
-                ></span>
-                Création en cours...
-              } @else {
-                Créer le compte
-              }
-            </button>
-          </div>
-
-          @if (m_error()) {
-            <div class="bg-red-50 border border-red-200 rounded-md p-4">
-              <p class="text-sm text-red-600">{{ m_error() }}</p>
-            </div>
+        <div>
+          <label for="email" class="block text-sm font-medium text-secondary-800">
+            Adresse email
+          </label>
+          <input
+            id="email"
+            type="email"
+            formControlName="email"
+            class="mt-1 block w-full px-3 py-2 border border-secondary-200 rounded-xl shadow-sm
+                 bg-white text-secondary-900
+                 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-300
+                 hover:bg-secondary-100 hover:text-secondary-900 transition-colors"
+            [class.border-red-500]="isFieldInvalid('email')"
+          />
+          @if (isFieldInvalid('email')) {
+            <p class="mt-1 text-sm text-red-600">
+              {{ getFieldError('email') }}
+            </p>
           }
-        </form>
-      </div>
+        </div>
+
+        <div>
+          <label for="password" class="block text-sm font-medium text-secondary-800">
+            Mot de passe
+          </label>
+          <input
+            id="password"
+            type="password"
+            formControlName="password"
+            class="mt-1 block w-full px-3 py-2 border border-secondary-200 rounded-xl shadow-sm
+                 bg-white text-secondary-900
+                 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-300
+                 hover:bg-secondary-100 hover:text-secondary-900 transition-colors"
+            [class.border-red-500]="isFieldInvalid('password')"
+          />
+          @if (isFieldInvalid('password')) {
+            <p class="mt-1 text-sm text-red-600">
+              {{ getFieldError('password') }}
+            </p>
+          }
+        </div>
+
+        <div>
+          <label for="confirmPassword" class="block text-sm font-medium text-secondary-800">
+            Confirmer le mot de passe
+          </label>
+          <input
+            id="confirmPassword"
+            type="password"
+            formControlName="confirmPassword"
+            class="mt-1 block w-full px-3 py-2 border border-secondary-200 rounded-xl shadow-sm
+                 bg-white text-secondary-900
+                 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-300
+                 hover:bg-secondary-100 hover:text-secondary-900 transition-colors"
+            [class.border-red-500]="isFieldInvalid('confirmPassword')"
+          />
+          @if (isFieldInvalid('confirmPassword')) {
+            <p class="mt-1 text-sm text-red-600">
+              {{ getFieldError('confirmPassword') }}
+            </p>
+          }
+        </div>
+
+        <div>
+          <button
+            type="submit"
+            [disabled]="m_registerForm.invalid || m_loading()"
+            class="w-full px-4 py-2 rounded-lg font-semibold
+         bg-primary-500 text-white
+         hover:bg-secondary-100 hover:text-secondary-900
+         transition-colors focus:outline-none
+         focus-visible:ring-2 focus-visible:ring-primary-300
+         disabled:opacity-50"
+          >
+            @if (m_loading()) {
+              <span
+                class="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"
+              ></span>
+              Création en cours...
+            } @else {
+              Créer le compte
+            }
+          </button>
+        </div>
+
+        @if (m_error()) {
+          <div class="bg-red-50 border border-red-200 rounded-xl p-4">
+            <p class="text-sm text-red-600">{{ m_error() }}</p>
+          </div>
+        }
+      </form>
     </div>
   `,
 })

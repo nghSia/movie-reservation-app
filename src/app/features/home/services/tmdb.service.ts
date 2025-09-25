@@ -26,7 +26,7 @@ export class TmdbService {
         TmdbListResponse<TmdbMovie>
       >(`${this.v_env.tmdb.baseUrl}/movie/now_playing`, { params: { page } })
       .pipe(
-        map((r) => r.results.slice(0, 10)),
+        map((r) => r.results.slice(0, 12)),
         shareReplay(1),
       );
   }

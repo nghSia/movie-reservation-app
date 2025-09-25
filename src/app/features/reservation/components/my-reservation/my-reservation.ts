@@ -12,21 +12,23 @@ import { ReservationService } from '../../services/reservation.service';
   imports: [CommonModule],
   template: `
     <div class="py-8">
-      <div class="bg-gray-100 text-black p-6 space-y-8 max-w-5xl mx-auto rounded-3xl shadow-lg">
+      <div
+        class="bg-secondary-50 text-secondary-900 p-6 space-y-8 max-w-5xl mx-auto rounded-3xl shadow-soft border border-secondary-100"
+      >
         <div class="flex items-center justify-between">
           <h2 class="text-2xl font-bold">Mes réservations</h2>
 
-          <div class="inline-flex rounded-xl overflow-hidden border border-gray-700">
+          <div class="inline-flex rounded-xl overflow-hidden border border-secondary-200 bg-white">
             <button
-              class="px-3 py-1 text-sm"
-              [class.bg-blue-200]="!showCancelled()"
+              class="px-3 py-1 text-sm transition-colors hover:bg-secondary-100 hover:text-secondary-900"
+              [class.bg-accent-100]="!showCancelled()"
               (click)="showCancelled.set(false)"
             >
               Actives
             </button>
             <button
-              class="px-3 py-1 text-sm"
-              [class.bg-blue-200]="showCancelled()"
+              class="px-3 py-1 text-sm transition-colors hover:bg-secondary-100 hover:text-secondary-900"
+              [class.bg-accent-100]="showCancelled()"
               (click)="showCancelled.set(true)"
             >
               Annulées ({{ cancelled().length }})
@@ -36,11 +38,11 @@ import { ReservationService } from '../../services/reservation.service';
 
         @if (!showCancelled()) {
           <section class="space-y-3">
-            <h3 class="text-lg font-semibold">En attente de confirmation</h3>
+            <h3 class="text-lg font-semibold text-secondary-800">En attente de confirmation</h3>
             @if (pending().length) {
               <div class="space-y-3">
                 @for (v_res of pending(); track v_res.id) {
-                  <div class="flex justify-between items-center p-4 bg-gray-900 rounded-2xl">
+                  <div class="flex justify-between items-center p-4 bg-secondary-800 rounded-2xl">
                     <div class="flex items-start gap-3">
                       @if (getPoster(v_res); as p) {
                         <img
@@ -49,11 +51,11 @@ import { ReservationService } from '../../services/reservation.service';
                           alt="{{ getTitle(v_res) }}"
                         />
                       } @else {
-                        <div class="w-16 h-24 rounded-lg bg-gray-900 shrink-0"></div>
+                        <div class="w-16 h-24 rounded-lg bg-secondary-700 shrink-0"></div>
                       }
                       <div class="flex-1">
-                        <div class="font-bold text-gray-300">{{ getTitle(v_res) }}</div>
-                        <div class="text-sm text-gray-300">
+                        <div class="font-bold text-secondary-100">{{ getTitle(v_res) }}</div>
+                        <div class="text-sm text-secondary-200">
                           {{ v_res.startHour | date: 'EEE d MMM HH:mm' : 'Europe/Paris' }}
                           • Salle #{{ v_res.roomId }} • {{ v_res.version }}
                         </div>
@@ -63,13 +65,17 @@ import { ReservationService } from '../../services/reservation.service';
                     <div class="flex gap-2">
                       @if (!isPastSession(v_res.startHour)) {
                         <button
-                          class="px-3 py-1 bg-blue-400 text-black rounded-lg hover:bg-blue-300"
+                          class="px-3 py-1 rounded-lg bg-primary-500 text-white transition-colors
+                             hover:bg-secondary-100 hover:text-secondary-900 focus:outline-none
+                             focus-visible:ring-2 focus-visible:ring-primary-300"
                           (click)="validateReservation(v_res)"
                         >
                           Finaliser
                         </button>
                         <button
-                          class="px-3 py-1 border bg-gray-400 border-gray-600 rounded-lg hover:bg-gray-500"
+                          class="px-3 py-1 rounded-lg border border-secondary-300 bg-white text-secondary-900 transition-colors
+                             hover:bg-secondary-100 hover:text-secondary-900 focus:outline-none
+                             focus-visible:ring-2 focus-visible:ring-primary-200"
                           (click)="cancelReservation(v_res)"
                         >
                           Annuler
@@ -80,16 +86,16 @@ import { ReservationService } from '../../services/reservation.service';
                 }
               </div>
             } @else {
-              <p class="text-gray-500">Aucune réservation en attente.</p>
+              <p class="text-secondary-500">Aucune réservation en attente.</p>
             }
           </section>
 
           <section class="space-y-3">
-            <h3 class="text-lg font-semibold">Confirmées</h3>
+            <h3 class="text-lg font-semibold text-secondary-800">Confirmées</h3>
             @if (confirmed().length) {
               <div class="space-y-3">
                 @for (v_res of confirmed(); track v_res.id) {
-                  <div class="p-4 bg-gray-900 rounded-2xl">
+                  <div class="p-4 bg-secondary-800 rounded-2xl">
                     <div class="flex items-start gap-3">
                       @if (getPoster(v_res); as p) {
                         <img
@@ -98,17 +104,17 @@ import { ReservationService } from '../../services/reservation.service';
                           alt="{{ getTitle(v_res) }}"
                         />
                       } @else {
-                        <div class="w-16 h-24 rounded-lg bg-gray-800 shrink-0"></div>
+                        <div class="w-16 h-24 rounded-lg bg-secondary-700 shrink-0"></div>
                       }
                       <div class="flex-1">
-                        <div class="font-bold text-gray-300">{{ getTitle(v_res) }}</div>
-                        <div class="text-sm text-gray-300">
+                        <div class="font-bold text-secondary-100">{{ getTitle(v_res) }}</div>
+                        <div class="text-sm text-secondary-200">
                           {{ v_res.startHour | date: 'EEE d MMM HH:mm' : 'Europe/Paris' }}
                           • Salle #{{ v_res.roomId }} • {{ v_res.version }}
                         </div>
 
                         @if (v_res.price !== undefined) {
-                          <div class="mt-1 text-gray-300">
+                          <div class="mt-1 text-secondary-100">
                             {{ v_res.quantity || 1 }} ×
                             {{ v_res.price! / (v_res.quantity || 1) | currency: 'EUR' }}
                             <span class="opacity-60 mx-1">•</span>
@@ -121,18 +127,18 @@ import { ReservationService } from '../../services/reservation.service';
                 }
               </div>
             } @else {
-              <p class="text-gray-500">Aucune réservation confirmée.</p>
+              <p class="text-secondary-500">Aucune réservation confirmée.</p>
             }
           </section>
         }
 
         @if (showCancelled()) {
           <section class="space-y-3">
-            <h3 class="text-lg font-semibold">Annulées</h3>
+            <h3 class="text-lg font-semibold text-secondary-800">Annulées</h3>
             @if (cancelled().length) {
               <div class="space-y-3">
                 @for (v_res of cancelled(); track v_res.id) {
-                  <div class="flex justify-between items-center p-4 bg-gray-900 rounded-2xl">
+                  <div class="flex justify-between items-center p-4 bg-secondary-800 rounded-2xl">
                     <div class="flex items-start gap-3">
                       @if (getPoster(v_res); as p) {
                         <img
@@ -141,16 +147,16 @@ import { ReservationService } from '../../services/reservation.service';
                           alt="{{ getTitle(v_res) }}"
                         />
                       } @else {
-                        <div class="w-16 h-24 rounded-lg bg-gray-800 shrink-0"></div>
+                        <div class="w-16 h-24 rounded-lg bg-secondary-700 shrink-0"></div>
                       }
                       <div class="flex-1">
-                        <div class="font-bold text-gray-300">{{ getTitle(v_res) }}</div>
-                        <div class="text-sm text-gray-300">
+                        <div class="font-bold text-secondary-100">{{ getTitle(v_res) }}</div>
+                        <div class="text-sm text-secondary-200">
                           {{ v_res.startHour | date: 'EEE d MMM HH:mm' : 'Europe/Paris' }}
                           • Salle #{{ v_res.roomId }} • {{ v_res.version }}
 
                           @if (v_res.price !== undefined) {
-                            <div class="mt-1 text-gray-300">
+                            <div class="mt-1 text-secondary-100">
                               {{ v_res.quantity || 1 }} ×
                               {{ v_res.price! / (v_res.quantity || 1) | currency: 'EUR' }}
                               <span class="opacity-60 mx-1">•</span>
@@ -163,7 +169,9 @@ import { ReservationService } from '../../services/reservation.service';
 
                     @if (!isPastSession(v_res.startHour)) {
                       <button
-                        class="px-3 py-1 bg-teal-400 text-black rounded-lg hover:bg-teal-300 disabled:opacity-50"
+                        class="px-3 py-1 rounded-lg bg-primary-500 text-white transition-colors
+                           hover:bg-secondary-100 hover:text-secondary-900 focus:outline-none
+                           focus-visible:ring-2 focus-visible:ring-primary-300 disabled:opacity-50"
                         (click)="validateReservation(v_res)"
                       >
                         Reserve again
@@ -173,7 +181,7 @@ import { ReservationService } from '../../services/reservation.service';
                 }
               </div>
             } @else {
-              <p class="text-gray-500">Aucune réservation annulée.</p>
+              <p class="text-secondary-500">Aucune réservation annulée.</p>
             }
           </section>
         }

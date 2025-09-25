@@ -9,26 +9,29 @@ import { AuthService } from '../../services/auth-service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   template: `
-    <div
-      class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 rounded-2xl"
-    >
-      <div class="max-w-md w-full space-y-8">
+    <div class="min-h-screen grid place-items-center px-4 sm:px-6 lg:px-8">
+      <div
+        class="max-w-md w-full space-y-8 bg-white border border-secondary-100 rounded-3xl p-6 shadow-soft"
+      >
         <div>
-          <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <h2 class="mt-2 text-center text-3xl font-extrabold text-secondary-900">
             Connexion à votre compte
           </h2>
         </div>
 
-        <form [formGroup]="m_loginForm" (ngSubmit)="onSubmit()" class="mt-8 space-y-6">
+        <form [formGroup]="m_loginForm" (ngSubmit)="onSubmit()" class="mt-6 space-y-6">
           <div>
-            <label for="email" class="block text-sm font-medium text-gray-700">
+            <label for="email" class="block text-sm font-medium text-secondary-800">
               Adresse email
             </label>
             <input
               id="email"
               type="email"
               formControlName="email"
-              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              class="mt-1 block w-full px-3 py-2 border border-secondary-200 rounded-xl shadow-sm
+                 bg-white text-secondary-900
+                 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-300
+                 hover:bg-secondary-100 hover:text-secondary-900 transition-colors"
               [class.border-red-500]="isFieldInvalid('email')"
             />
             @if (isFieldInvalid('email')) {
@@ -39,14 +42,17 @@ import { AuthService } from '../../services/auth-service';
           </div>
 
           <div>
-            <label for="password" class="block text-sm font-medium text-gray-700">
+            <label for="password" class="block text-sm font-medium text-secondary-800">
               Mot de passe
             </label>
             <input
               id="password"
               type="password"
               formControlName="password"
-              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              class="mt-1 block w-full px-3 py-2 border border-secondary-200 rounded-xl shadow-sm
+                 bg-white text-secondary-900
+                 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-300
+                 hover:bg-secondary-100 hover:text-secondary-900 transition-colors"
               [class.border-red-500]="isFieldInvalid('password')"
             />
             @if (isFieldInvalid('password')) {
@@ -60,11 +66,16 @@ import { AuthService } from '../../services/auth-service';
             <button
               type="submit"
               [disabled]="m_loginForm.invalid || m_loading()"
-              class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-pink-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 disabled:opacity-50"
+              class="w-full px-4 py-2 rounded-lg font-semibold
+                 bg-primary-500 text-white
+                 hover:bg-secondary-100 hover:text-secondary-900
+                 transition-colors focus:outline-none
+                 focus-visible:ring-2 focus-visible:ring-primary-300
+                 disabled:opacity-50"
             >
               @if (m_loading()) {
                 <span
-                  class="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
+                  class="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"
                 ></span>
                 Connexion en cours...
               } @else {
@@ -74,7 +85,7 @@ import { AuthService } from '../../services/auth-service';
           </div>
 
           @if (m_error()) {
-            <div class="bg-red-50 border border-red-200 rounded-md p-4">
+            <div class="bg-red-50 border border-red-200 rounded-xl p-4">
               <p class="text-sm text-red-600">{{ m_error() }}</p>
             </div>
           }

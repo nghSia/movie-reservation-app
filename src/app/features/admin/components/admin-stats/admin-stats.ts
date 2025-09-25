@@ -1,4 +1,3 @@
-// src/app/features/admin/pages/admin-stats.ts
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
@@ -25,28 +24,28 @@ interface Row {
   selector: 'app-admin-stats',
   imports: [CommonModule],
   template: `
-    <div class="p-6 max-w-6xl mx-auto text-white">
+    <div class="p-6 max-w-6xl mx-auto text-secondary-900">
       <h1 class="text-2xl font-bold mb-6">Statistiques des films à l'affiche</h1>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div class="bg-gray-900 rounded-2xl p-4">
-          <div class="text-sm text-gray-400">Total réservations</div>
-          <div class="text-2xl font-bold">{{ m_totals().v_total }}</div>
+        <div class="bg-white rounded-2xl p-4 border border-secondary-200">
+          <div class="text-sm text-secondary-600">Total réservations</div>
+          <div class="text-2xl font-bold text-secondary-900">{{ m_totals().v_total }}</div>
         </div>
-        <div class="bg-gray-900 rounded-2xl p-4">
-          <div class="text-sm text-gray-400">Confirmées</div>
-          <div class="text-2xl font-bold">{{ m_totals().v_confirmed }}</div>
+        <div class="bg-white rounded-2xl p-4 border border-secondary-200">
+          <div class="text-sm text-secondary-600">Confirmées</div>
+          <div class="text-2xl font-bold text-secondary-900">{{ m_totals().v_confirmed }}</div>
         </div>
-        <div class="bg-gray-900 rounded-2xl p-4">
-          <div class="text-sm text-gray-400">Annulées</div>
-          <div class="text-2xl font-bold">{{ m_totals().v_cancelled }}</div>
+        <div class="bg-white rounded-2xl p-4 border border-secondary-200">
+          <div class="text-sm text-secondary-600">Annulées</div>
+          <div class="text-2xl font-bold text-secondary-900">{{ m_totals().v_cancelled }}</div>
         </div>
       </div>
 
-      <div class="overflow-x-auto rounded-2xl border border-gray-800">
-        <table class="w-full text-sm bg-gray-950">
-          <thead class="bg-gray-900 text-gray-300">
-            <tr>
+      <div class="overflow-x-auto rounded-2xl border border-secondary-200 bg-white">
+        <table class="w-full text-sm">
+          <thead class="bg-secondary-50 text-secondary-700">
+            <tr class="border-b border-secondary-200">
               <th class="text-left px-4 py-3">Film</th>
               <th class="text-right px-4 py-3">Total</th>
               <th class="text-right px-4 py-3">Pending</th>
@@ -59,7 +58,9 @@ interface Row {
           </thead>
           <tbody>
             @for (v_row of m_rows(); track v_row.tmdbId) {
-              <tr class="border-t border-gray-800">
+              <tr
+                class="border-t border-secondary-100 hover:bg-secondary-100 hover:text-secondary-900 transition-colors"
+              >
                 <td class="px-4 py-3">
                   <div class="flex items-center gap-3">
                     @if (v_row.posterUrl) {
@@ -82,7 +83,7 @@ interface Row {
               </tr>
             } @empty {
               <tr>
-                <td colspan="8" class="px-4 py-8 text-center text-gray-500">Aucune donnée</td>
+                <td colspan="8" class="px-4 py-8 text-center text-secondary-500">Aucune donnée</td>
               </tr>
             }
           </tbody>
