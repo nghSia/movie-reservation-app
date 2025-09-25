@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { HighlightDirective } from '../../../../shared/directives/highlight.directive';
+import { DateFrPipe } from '../../../../shared/pipes/date-fr.pipe';
 import { AuthService } from '../../../auth/services/auth-service';
 import { TmdbService } from '../../../home/services/tmdb.service';
 import { Reservation } from '../../models/reservation.model';
@@ -9,7 +11,7 @@ import { ReservationService } from '../../services/reservation.service';
 @Component({
   standalone: true,
   selector: 'app-my-reservation',
-  imports: [CommonModule],
+  imports: [CommonModule, HighlightDirective, DateFrPipe],
   template: `
     <div class="py-8">
       <div
@@ -42,7 +44,16 @@ import { ReservationService } from '../../services/reservation.service';
             @if (pending().length) {
               <div class="space-y-3">
                 @for (v_res of pending(); track v_res.id) {
-                  <div class="flex justify-between items-center p-4 bg-secondary-800 rounded-2xl">
+                  <div
+                    class="flex justify-between items-center p-4 bg-secondary-800 rounded-2xl"
+                    [appHighlight]="
+                      v_res.status === 'CONFIRMED'
+                        ? '#d1fae5'
+                        : v_res.status === 'CANCELLED'
+                          ? '#fecaca'
+                          : null
+                    "
+                  >
                     <div class="flex items-start gap-3">
                       @if (getPoster(v_res); as p) {
                         <img
@@ -56,7 +67,7 @@ import { ReservationService } from '../../services/reservation.service';
                       <div class="flex-1">
                         <div class="font-bold text-secondary-100">{{ getTitle(v_res) }}</div>
                         <div class="text-sm text-secondary-200">
-                          {{ v_res.startHour | date: 'EEE d MMM HH:mm' : 'Europe/Paris' }}
+                          {{ v_res.startHour | dateFr }}
                           • Salle #{{ v_res.roomId }} • {{ v_res.version }}
                         </div>
                       </div>
@@ -91,11 +102,20 @@ import { ReservationService } from '../../services/reservation.service';
           </section>
 
           <section class="space-y-3">
-            <h3 class="text-lg font-semibold text-secondary-800">Confirmées</h3>
+            <h3 class="text-lg font-semibold text-black">Confirmées</h3>
             @if (confirmed().length) {
               <div class="space-y-3">
                 @for (v_res of confirmed(); track v_res.id) {
-                  <div class="p-4 bg-secondary-800 rounded-2xl">
+                  <div
+                    class="p-4 bg-secondary-800 rounded-2xl"
+                    [appHighlight]="
+                      v_res.status === 'CONFIRMED'
+                        ? '#d1fae5'
+                        : v_res.status === 'CANCELLED'
+                          ? '#fecaca'
+                          : null
+                    "
+                  >
                     <div class="flex items-start gap-3">
                       @if (getPoster(v_res); as p) {
                         <img
@@ -107,14 +127,14 @@ import { ReservationService } from '../../services/reservation.service';
                         <div class="w-16 h-24 rounded-lg bg-secondary-700 shrink-0"></div>
                       }
                       <div class="flex-1">
-                        <div class="font-bold text-secondary-100">{{ getTitle(v_res) }}</div>
-                        <div class="text-sm text-secondary-200">
-                          {{ v_res.startHour | date: 'EEE d MMM HH:mm' : 'Europe/Paris' }}
+                        <div class="font-bold text-black">{{ getTitle(v_res) }}</div>
+                        <div class="text-sm text-black">
+                          {{ v_res.startHour | dateFr }}
                           • Salle #{{ v_res.roomId }} • {{ v_res.version }}
                         </div>
 
                         @if (v_res.price !== undefined) {
-                          <div class="mt-1 text-secondary-100">
+                          <div class="mt-1 text-black">
                             {{ v_res.quantity || 1 }} ×
                             {{ v_res.price! / (v_res.quantity || 1) | currency: 'EUR' }}
                             <span class="opacity-60 mx-1">•</span>
@@ -138,7 +158,16 @@ import { ReservationService } from '../../services/reservation.service';
             @if (cancelled().length) {
               <div class="space-y-3">
                 @for (v_res of cancelled(); track v_res.id) {
-                  <div class="flex justify-between items-center p-4 bg-secondary-800 rounded-2xl">
+                  <div
+                    class="flex justify-between items-center p-4 bg-secondary-800 rounded-2xl"
+                    [appHighlight]="
+                      v_res.status === 'CONFIRMED'
+                        ? '#d1fae5'
+                        : v_res.status === 'CANCELLED'
+                          ? '#fecaca'
+                          : null
+                    "
+                  >
                     <div class="flex items-start gap-3">
                       @if (getPoster(v_res); as p) {
                         <img
@@ -152,7 +181,7 @@ import { ReservationService } from '../../services/reservation.service';
                       <div class="flex-1">
                         <div class="font-bold text-secondary-100">{{ getTitle(v_res) }}</div>
                         <div class="text-sm text-secondary-200">
-                          {{ v_res.startHour | date: 'EEE d MMM HH:mm' : 'Europe/Paris' }}
+                          {{ v_res.startHour | dateFr }}
                           • Salle #{{ v_res.roomId }} • {{ v_res.version }}
 
                           @if (v_res.price !== undefined) {

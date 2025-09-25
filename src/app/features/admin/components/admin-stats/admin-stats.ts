@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { TruncatePipe } from '../../../../shared/pipes/truncate.pipe';
 import { TmdbMovie } from '../../../home/models/movie.model';
 import { TmdbService } from '../../../home/services/tmdb.service';
 import { Reservation } from '../../../reservation/models/reservation.model';
@@ -22,7 +23,7 @@ interface Row {
 @Component({
   standalone: true,
   selector: 'app-admin-stats',
-  imports: [CommonModule],
+  imports: [CommonModule, TruncatePipe],
   template: `
     <div class="p-6 max-w-6xl mx-auto text-secondary-900">
       <h1 class="text-2xl font-bold mb-6">Statistiques des films à l'affiche</h1>
@@ -70,7 +71,7 @@ interface Row {
                         class="w-10 h-14 rounded-md object-cover"
                       />
                     }
-                    <span class="font-medium">{{ v_row.title }}</span>
+                    <span class="font-medium">{{ v_row.title | truncate: 30 }}</span>
                   </div>
                 </td>
                 <td class="px-4 py-3 text-right">{{ v_row.total }}</td>

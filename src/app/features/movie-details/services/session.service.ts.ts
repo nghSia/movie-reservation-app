@@ -45,13 +45,11 @@ export class SessionServices {
 
   /** Create sessions for a specific day */
   private buildDaySessions(p_dayOffset: number, p_tmdbId: number, p_runtime: number): Session[] {
-    // base = aujourd’hui à minuit (local)
     const base = new Date();
     base.setHours(0, 0, 0, 0);
     base.setDate(base.getDate() + p_dayOffset);
 
     return this.BASE_SLOTS.map((slot) => {
-      // start = base + HH:mm du slot (local)
       const [h, m] = slot.time.split(':').map(Number);
       const v_start = new Date(base);
       v_start.setHours(h, m, 0, 0);
