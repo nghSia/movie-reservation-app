@@ -13,7 +13,8 @@ import { SessionServices, SessionView } from '../services/session.service.ts';
   template: `
     <a
       routerLink="/"
-      class="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-primary-500 text-white hover:bg-primary-400 transition-colors"
+      class="mt-4 sm:mt-6 ml-4 sm:ml-6 inline-flex items-center justify-center px-4 py-2
+         rounded-xl bg-primary-500 text-white hover:bg-primary-400 transition-colors"
     >
       ← Retour
     </a>
