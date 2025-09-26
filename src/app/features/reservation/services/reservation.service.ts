@@ -64,10 +64,10 @@ export class ReservationService {
     p_secondSessionStartISO: string,
     p_secondSessionEndISO: string,
   ): boolean {
-    const vfirstStart = new Date(p_firstSessionStartISO).getTime();
-    const vfirstEnd = new Date(p_firstSessionEndISO).getTime();
-    const vsecondStart = new Date(p_secondSessionStartISO).getTime();
-    const vsecondEnd = new Date(p_secondSessionEndISO).getTime();
+    const vfirstStart = this.epochLocal(this.toLocalMinuteISO(p_firstSessionStartISO));
+    const vfirstEnd = this.epochLocal(this.toLocalMinuteISO(p_firstSessionEndISO));
+    const vsecondStart = this.epochLocal(this.toLocalMinuteISO(p_secondSessionStartISO));
+    const vsecondEnd = this.epochLocal(this.toLocalMinuteISO(p_secondSessionEndISO));
     return vfirstStart < vsecondEnd && vsecondStart < vfirstEnd;
   }
 
@@ -79,16 +79,19 @@ export class ReservationService {
     p_excludeId?: number,
     p_statuses?: Reservation['status'][],
   ): boolean {
-    const s = Date.parse(p_startISO),
-      e = Date.parse(p_endISO);
-    if (!Number.isFinite(s) || !Number.isFinite(e) || s >= e) return false;
+    const v_startLocal = this.toLocalMinuteISO(p_startISO);
+    const v_endLocal = this.toLocalMinuteISO(p_endISO);
+
+    const v_start = Date.parse(v_startLocal),
+      v_end = Date.parse(v_endLocal);
+    if (!Number.isFinite(v_start) || !Number.isFinite(v_end) || v_start >= v_end) return false;
 
     const statusesToCheck = p_statuses ?? (['PENDING', 'CONFIRMED'] as Reservation['status'][]);
     return this.v_reservations().some((r) => {
       if (r.userId !== p_userId) return false;
       if (p_excludeId && r.id === p_excludeId) return false;
       if (!statusesToCheck.includes(r.status)) return false;
-      return this.overlapsSession(p_startISO, p_endISO, r.startHour, r.endHour);
+      return this.overlapsSession(v_startLocal, v_endLocal, r.startHour, r.endHour);
     });
   }
 
@@ -99,7 +102,7 @@ export class ReservationService {
         (r) =>
           r.status === 'CONFIRMED' &&
           r.roomId === p_session.roomId &&
-          r.startHour === p_session.start &&
+          r.startHour === this.toLocalMinuteISO(p_session.start) &&
           r.tmdbId === p_session.tmdbId,
       )
       .reduce((sum, r) => sum + r.quantity, 0);
@@ -114,26 +117,29 @@ export class ReservationService {
     p_movieTitle?: string,
     p_moviePosterPath?: string,
   ): Reservation {
-    if (this.hasTimeConflict(p_userId, p_session.start, p_session.end)) {
+    const v_startLocal = this.toLocalMinuteISO(p_session.start);
+    const v_endLocal = this.toLocalMinuteISO(p_session.end);
+
+    if (this.hasTimeConflict(p_userId, v_startLocal, v_endLocal)) {
       throw new Error('You already have a reservation at this time.');
     }
-    const clash = this.findByComposite(p_userId, p_session.tmdbId, p_session.start);
-    if (clash) {
-      if (clash.status === 'CANCELLED') {
+    const v_clash = this.findByComposite(p_userId, p_session.tmdbId, v_startLocal);
+    if (v_clash) {
+      if (v_clash.status === 'CANCELLED') {
         return this.updateReservation(
-          { id: clash.id, userId: clash.userId, tmdbId: clash.tmdbId },
+          { id: v_clash.id, userId: v_clash.userId, tmdbId: v_clash.tmdbId },
           {
             roomId: p_session.roomId,
-            startHour: p_session.start,
-            endHour: p_session.end,
+            startHour: v_startLocal,
+            endHour: v_endLocal,
             version: p_session.version,
             quantity: 1,
             ticketType: 'ADULT',
             price: this.getPriceForCustomerType('ADULT', 1),
             status: 'PENDING',
-            createdAt: new Date().toISOString(),
-            movieTitle: p_movieTitle ?? clash.movieTitle,
-            moviePosterPath: p_moviePosterPath ?? clash.moviePosterPath,
+            createdAt: this.toLocalMinuteISO(new Date()),
+            movieTitle: p_movieTitle ?? v_clash.movieTitle,
+            moviePosterPath: p_moviePosterPath ?? v_clash.moviePosterPath,
           },
         )!;
       }
@@ -145,8 +151,8 @@ export class ReservationService {
       userId: p_userId,
       tmdbId: p_session.tmdbId,
       roomId: p_session.roomId,
-      startHour: p_session.start,
-      endHour: p_session.end,
+      startHour: v_startLocal,
+      endHour: v_endLocal,
       version: p_session.version,
       quantity: 1,
       ticketType: 'ADULT',
@@ -184,28 +190,39 @@ export class ReservationService {
         v_res.userId === p_userId &&
         v_res.tmdbId === p_session.tmdbId &&
         v_res.roomId === p_session.roomId &&
-        v_res.startHour === p_session.start &&
+        v_res.startHour === this.toLocalMinuteISO(p_session.start) &&
         v_res.status === 'PENDING',
     );
   }
 
   /** Normalise une ISO (UTC) à la minute, ex: 2025-09-24T16:00 */
   private toMinuteKey(p_iso: string): string {
-    const v_d = new Date(p_iso);
-    const v_yyyy = v_d.getUTCFullYear();
-    const v_mm = String(v_d.getUTCMonth() + 1).padStart(2, '0');
-    const v_dd = String(v_d.getUTCDate()).padStart(2, '0');
-    const v_hh = String(v_d.getUTCHours()).padStart(2, '0');
-    const v_mi = String(v_d.getUTCMinutes()).padStart(2, '0');
+    return this.toLocalMinuteISO(p_iso);
+  }
+
+  /** Convert any date input (ISO string or Date) to a *local wall time* ISO */
+  public isPast(startISO: string): boolean {
+    return this.epochLocal(this.toLocalMinuteISO(startISO)) < Date.now();
+  }
+
+  /** Convert any date input (ISO string or Date) to a *local wall time* ISO */
+  public toLocalMinuteISO(p_iso: string | Date): string {
+    const v_d = typeof p_iso === 'string' ? new Date(p_iso) : p_iso;
+    const v_yyyy = v_d.getFullYear();
+    const v_mm = String(v_d.getMonth() + 1).padStart(2, '0');
+    const v_dd = String(v_d.getDate()).padStart(2, '0');
+    const v_hh = String(v_d.getHours()).padStart(2, '0');
+    const v_mi = String(v_d.getMinutes()).padStart(2, '0');
     return `${v_yyyy}-${v_mm}-${v_dd}T${v_hh}:${v_mi}`;
   }
 
-  /** True si la séance est passée par rapport à maintenant */
-  public isPast(startISO: string): boolean {
-    return new Date(startISO).getTime() < Date.now();
+  /** Epoch time (ms) from an ISO or Date interpreted in *local time* */
+  public epochLocal(p_iso: string | Date): number {
+    const v_date = typeof p_iso === 'string' ? new Date(p_iso) : p_iso;
+    return v_date.getTime();
   }
 
-  /** Cherche une résa (même user+tmdbId+minute de début), quel que soit le statut */
+  /** Find an existing reservation for the same user + movie (tmdbId) + local start minute. */
   private findByComposite(p_userId: number, p_tmdbId: number, p_startISO: string) {
     const v_key = this.toMinuteKey(p_startISO);
     return this.v_reservations().find(
@@ -246,6 +263,9 @@ export class ReservationService {
     const v_updated: Reservation = {
       ...v_current,
       ...p_patch,
+      startHour: p_patch.startHour ? this.toLocalMinuteISO(p_patch.startHour) : v_current.startHour,
+      endHour: p_patch.endHour ? this.toLocalMinuteISO(p_patch.endHour) : v_current.endHour,
+      createdAt: p_patch.createdAt ? this.toLocalMinuteISO(p_patch.createdAt) : v_current.createdAt,
       id: v_current.id,
       userId: v_current.userId,
       tmdbId: v_current.tmdbId,

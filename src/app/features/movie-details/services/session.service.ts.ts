@@ -85,7 +85,9 @@ export class SessionServices {
 
   /** Check if session is in the past */
   isPastSession(p_sessionView: SessionView): boolean {
-    const v_now = Date.now();
-    return new Date(p_sessionView.session.start).getTime() <= v_now;
+    const v_startLocalMs = this.s_reservation.epochLocal(
+      this.s_reservation.toLocalMinuteISO(p_sessionView.session.start),
+    );
+    return v_startLocalMs <= Date.now();
   }
 }
