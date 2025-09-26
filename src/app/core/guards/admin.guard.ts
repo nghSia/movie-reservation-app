@@ -21,7 +21,7 @@ export const adminGuard: CanActivateFn = () => {
           horizontalPosition: 'center',
           verticalPosition: 'top',
         });
-        c_router.navigate(['/todos']);
+        c_router.navigate(['/home']);
         return false;
       }
     }),
