@@ -1,6 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import { MovieRoom } from '../../../shared/model/movie-room.model';
-import { Session } from '../../../shared/model/session.model';
+import { Session } from '../../movie-details/models/session.model';
 import { Reservation, ReservationStatus, TicketType } from '../models/reservation.model';
 
 type PriceTable = Record<TicketType, number>;

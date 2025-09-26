@@ -1,8 +1,8 @@
 import { inject, Injectable } from '@angular/core';
 import { MOVIE_ROOMS_MOCK } from '../../../shared/mocks/movie-room-mock';
 import { MovieRoom } from '../../../shared/model/movie-room.model';
-import { Session } from '../../../shared/model/session.model';
 import { ReservationService } from '../../reservation/services/reservation.service';
+import { Session } from '../models/session.model';
 
 export interface SessionView {
   session: Session;

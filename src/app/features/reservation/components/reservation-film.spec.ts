@@ -3,9 +3,9 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, provideRouter, Router } from '@angular/router';
 import { of } from 'rxjs';
 
-import { MovieVersion } from '../../../shared/model/session.model';
 import { AuthService } from '../../auth/services/auth-service';
 import { TmdbService } from '../../home/services/tmdb.service';
+import { MovieVersion } from '../../movie-details/models/session.model';
 import { Reservation, TicketType } from '../models/reservation.model';
 import { ReservationService } from '../services/reservation.service';
 import { ReservationFilm } from './reservation-film';
