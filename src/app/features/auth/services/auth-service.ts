@@ -34,6 +34,10 @@ export class AuthService {
   constructor() {
     this.loadUsersFromStorage();
 
+    if (!localStorage.getItem('users') || this.v_users().length === 0) {
+      this.saveUsersToStorage([...this.v_userMocks]);
+    }
+
     const v_savedUser = localStorage.getItem('currentUser');
     if (v_savedUser) {
       this.v_currentUser.set(JSON.parse(v_savedUser));
