@@ -1,6 +1,50 @@
-# movie-reservation-app
-Movie reservation application - Angular class
-# MovieReservationApp
+# 🎬 Movie Reservation App (Angular 20)
+
+Application de **réservation de séances de cinéma** construite avec **Angular 20** (composants **standalone**, **Signals**) et **Tailwind CSS**.  
+Persistance **hybride** : **mock + localStorage** pour les entités métier (utilisateurs, réservations, salles, séances) et **données films en live** via **TMDB API** (interceptor HTTP).
+
+> Conforme aux exigences pédagogiques : **DDD**, **lazy loading**, **guards**, **Reactive Forms** (avec **validator custom**), **Signals** (writable/computed/effect), **interceptor HTTP**, **UI responsive** et **accessibilité**.
+
+---
+
+## 🧭 Sommaire
+
+- [Aperçu](#-aperçu)
+- [Fonctionnalités](#-fonctionnalités)
+- [Architecture](#-architecture)
+- [Prérequis](#-prérequis)
+- [Installation](#-installation)
+- [Configuration TMDB](#-configuration-tmdb)
+- [Démarrage](#-démarrage)
+- [Scripts NPM](#-scripts-npm)
+- [Tests & Qualité](#-tests--qualité)
+- [Structure (extrait)](#-structure-extrait)
+- [Concepts Angular](#-concepts-angular)
+- [Parcours de démo (≤ 20 min)](#-parcours-de-démo--20-min)
+- [Comptes démo (optionnel)](#-comptes-démo-optionnel)
+- [FAQ rapide](#-faq-rapide)
+- [Licence](#-licence)
+
+---
+
+## 🖼 Aperçu
+
+- **Accueil** : films **“À l’affiche”** (TMDB) + **“Mieux notés”**, cache en mémoire (`shareReplay(1)`), **MovieCard** réutilisable.
+- **Détails film** : informations TMDB + **séances mockées** (VO/VOSTFR/VF).
+- **Réservation** : brouillon **PENDING** automatique, **Reactive Forms** avec **validator custom** (quantité ≤ places restantes), **Signals** (prix, sièges), **autosave** (effects → localStorage), statuts **CONFIRMED/CANCELLED**.
+- **Mes réservations** : regroupement **PENDING/CONFIRMED/CANCELLED**, **réserver à nouveau**.
+- **Admin** : gestion **users** (rôle/suppression), **stats** par film (% confirmed/pending/cancelled) **réactives**.
+
+---
+
+## ✨ Fonctionnalités
+
+- Auth & rôles : register/login mock, **User** & **Admin**, **AuthGuard** + **AdminGuard**, persistance **localStorage**.
+- HTTP & Interceptor : **Bearer TMDB** + `language=fr-FR` injectés automatiquement.
+- UI/UX : **Tailwind**, navigation **dynamique** selon rôle, **accessibilité** (focus-visible, aria).
+- Qualité : **TypeScript strict**, **ESLint**, tests **unitaires** et **d’intégration**.
+
+---
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.3.1.
 
